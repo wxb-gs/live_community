@@ -1,0 +1,29 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: auth-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+  redis:
+    host: localhost
+    port: 6379
+
+dubbo:
+  application:
+    name: auth-service
+  registry:
+    address: nacos://localhost:8848
+  protocol:
+    name: tri
+    port: 20884
+
+jwt:
+  secret: super-secret-key-change-in-production
+
+wechat:
+  app-id: ""
+  app-secret: ""
