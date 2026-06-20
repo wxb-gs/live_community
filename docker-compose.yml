@@ -29,6 +29,7 @@ services:
     volumes:
       - mysql-data:/var/lib/mysql
       - ./leaf-service/src/main/resources/sql/init_leaf.sql:/docker-entrypoint-initdb.d/01-init-leaf.sql
+      - ./auth-service/src/main/resources/sql/init_auth.sql:/docker-entrypoint-initdb.d/02-init-auth.sql
     healthcheck:
       test: mysqladmin ping -h localhost -u root -proot
       interval: 10s
@@ -89,6 +90,19 @@ services:
       timeout: 10s
       retries: 30
       start_period: 60s
+    networks:
+      - live-community
+
+  redis:
+    image: redis:7-alpine
+    container_name: redis
+    ports:
+      - "16379:6379"
+    healthcheck:
+      test: ["CMD", "redis-cli", "ping"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
     networks:
       - live-community
 
@@ -172,6 +186,30 @@ services:
         condition: service_started
       note-service:
         condition: service_started
+    networks:
+      - live-community
+
+  auth-service:
+    build: ./auth-service
+    container_name: auth-service
+    ports:
+      - "8084:8084"
+      - "20884:20884"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_REDIS_HOST: redis
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production}
+      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
+      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+      redis:
+        condition: service_healthy
     networks:
       - live-community
 

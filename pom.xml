@@ -16,6 +16,7 @@
         <module>upload-service</module>
         <module>leaf-service</module>
         <module>note-service</module>
+        <module>auth-service</module>
     </modules>
 
     <properties>
