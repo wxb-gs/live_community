@@ -1,4 +1,5 @@
-import { API_BASE, MOCK_USER } from '../config';
+import { API_BASE } from '../config';
+import { getAccessToken, clearTokens } from '../utils/tokenStore';
 import type {
   NoteSummary,
   NoteDetail,
@@ -9,10 +10,22 @@ import type {
 } from '../types';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
+  const token = getAccessToken();
+  const headers: Record<string, string> = {
+    'Content-Type': 'application/json',
+  };
+  if (token) {
+    headers['Authorization'] = `Bearer ${token}`;
+  }
   const res = await fetch(`${API_BASE}${path}`, {
-    headers: { 'Content-Type': 'application/json' },
     ...options,
+    headers: { ...headers, ...((options?.headers as Record<string, string>) ?? {}) },
   });
+  if (res.status === 401) {
+    clearTokens();
+    window.location.href = '/login';
+    throw new Error('登录已过期');
+  }
   if (res.status === 429) {
     throw new Error('请求太频繁，请稍后再试');
   }
@@ -37,11 +50,7 @@ export async function fetchNoteDetail(noteId: number): Promise<NoteDetail> {
 export async function createDraft(title: string, content: string): Promise<CreateDraftResponse> {
   return request<CreateDraftResponse>('/api/note/draft', {
     method: 'POST',
-    body: JSON.stringify({
-      userId: MOCK_USER.userId,
-      title,
-      content,
-    }),
+    body: JSON.stringify({ title, content }),
   });
 }
 
@@ -84,10 +93,6 @@ export async function publishNote(
 export async function addComment(noteId: number, content: string): Promise<CommentItem> {
   return request<CommentItem>('/api/note/comment', {
     method: 'POST',
-    body: JSON.stringify({
-      noteId,
-      userId: MOCK_USER.userId,
-      content,
-    }),
+    body: JSON.stringify({ noteId, content }),
   });
 }
