@@ -1,0 +1,82 @@
+<h2>核心数据流设计</h2>
+<p class="subtitle">上传发布流程是最复杂的链路，涉及预签名 URL → 直传 MinIO → 关联业务数据</p>
+
+<div class="mockup" style="margin-bottom:1.5rem;">
+  <div class="mockup-header">发布笔记完整流程（关键路径）</div>
+  <div class="mockup-body">
+    <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;font-size:0.82rem;line-height:2;">
+<b style="color:#f9e2af;">Step 1: 创建草稿</b>
+POST /api/note/draft  { userId:1001, title:"标题", content:"正文" }
+  → gateway:8080 → note-service → leaf-service (生成noteId) → Cassandra
+  ← { code:200, data:{ noteId:1234567890, status:"DRAFT" } }
+
+<b style="color:#f9e2af;">Step 2: 获取预签名上传URL</b>
+GET /api/upload/presigned?fileName=cover.jpg&contentType=image/jpeg
+  → gateway:8080 (Sentinel限流) → upload-service → MinIO
+  ← { code:200, data:{ uploadUrl:"http://minio:9000/...", objectKey:"2026/06/20/uuid_cover.jpg", expiresAt:... } }
+
+<b style="color:#f9e2af;">Step 3: 直传MinIO (浏览器 → MinIO，不经过后端!)</b>
+PUT {uploadUrl}  ← 原始图片二进制
+  → MinIO:9000 (直接上传，5分钟内有效)
+  ← 200 OK
+
+<b style="color:#f9e2af;">Step 4: 发布笔记（关联图片 + 状态变更）</b>
+POST /api/note/publish  { noteId:1234567890, fileName:"cover.jpg", contentType:"image/jpeg" }
+  → gateway:8080 → note-service → Cassandra (UPDATE status="PUBLISHED", objectKey=...)
+  ← { code:200, data:{ noteId:..., status:"PUBLISHED", uploadUrl:... } }
+    </pre>
+  </div>
+</div>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">浏览 Feed 流程</div>
+    <div class="mockup-body">
+      <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;font-size:0.82rem;line-height:1.8;">
+<b style="color:#a6e3a1;">GET /api/note/detail?noteId=ID</b>
+  ← note + comments
+
+<b style="color:#f38ba8;">问题</b>: 后端没有"列出所有笔记"
+的接口！
+
+<b style="color:#f9e2af;">解决方案</b>:
+后端需要新增 GET /api/note/list
+接口，或前端调用 note-service
+直连 REST 接口。
+      </pre>
+    </div>
+  </div>
+  <div class="mockup">
+    <div class="mockup-header">图片展示策略</div>
+    <div class="mockup-body">
+      <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;font-size:0.82rem;line-height:1.8;">
+卡片封面图：需要公开可读的URL
+
+<b style="color:#f38ba8;">问题</b>: 预签名URL是PUT的，
+只能上传不能下载预览。
+
+<b style="color:#f9e2af;">解决方案</b>:
+详情页展示时，后端返回
+GET 预签名 URL（或配置
+MinIO bucket 公开读）。
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="options" style="margin-top:1.5rem;">
+  <div class="option" data-choice="add-list-api" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案A：后端新增 GET /api/note/list 接口</h3>
+      <p>在 note-service 增加分页查询已发布笔记列表的 API。最规范的做法，前端只需调 gateway。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="front-mock" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案B：前端 mock 数据开发，后续补后端</h3>
+      <p>先用 mock 数据把瀑布流 UI 做出来，列表接口后续再加。快速看到前端效果。</p>
+    </div>
+  </div>
+</div>

@@ -1,0 +1,33 @@
+<h2>选择前端 UI 技术栈</h2>
+<p class="subtitle">小红书风格 = 瀑布流布局 + 大图封面卡片 + 流畅交互</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>Vite + React + Tailwind CSS</h3>
+      <p>轻量级，完全自定义设计，Tailwind 原子化样式灵活度高。瀑布流可用 react-masonry 或手写 CSS columns 实现。适合追求像素级还原小红书设计。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>Vite + React + Ant Design</h3>
+      <p>阿里系组件库，和 Spring Cloud Alibaba 技术栈呼应。Card/Upload/Modal 等组件开箱即用，但风格偏企业级，定制小红书风格需要大量覆盖样式。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>Next.js + Tailwind CSS</h3>
+      <p>支持 SSR/SSG，SEO 友好。但后端已是独立部署的微服务，Next.js 的 Node Server 会多一层。适合未来需要 SEO 的社区内容页，但当前阶段稍重。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="d" onclick="toggleSelect(this)">
+    <div class="letter">D</div>
+    <div class="content">
+      <h3>Vite + React + CSS Modules</h3>
+      <p>纯粹的轻量方案，无第三方 UI 库依赖。样式完全自主控制，适合打造自有设计体系。但轮子需要自己造（瀑布流、骨架屏、弹窗等）。</p>
+    </div>
+  </div>
+</div>

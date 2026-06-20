@@ -1,0 +1,29 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: leaf-service
+  datasource:
+    url: jdbc:mysql://localhost:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: root
+    password: root
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: localhost:8848
+
+dubbo:
+  application:
+    name: leaf-service
+  registry:
+    address: nacos://localhost:8848
+  protocol:
+    name: tri
+    port: 20881
+
+leaf:
+  snowflake:
+    worker-id: 1
+    datacenter-id: 1

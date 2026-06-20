@@ -1,0 +1,3 @@
+com\example\gateway\GatewayApplication.class
+com\example\gateway\controller\NoteController.class
+com\example\gateway\controller\UploadController.class

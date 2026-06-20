@@ -1,0 +1,47 @@
+<h2>第一个版本需要哪些页面？</h2>
+<p class="subtitle">小红书核心体验：浏览发现 → 查看详情 → 发布分享</p>
+
+<div class="options" data-multiselect>
+  <div class="option" data-choice="feed" onclick="toggleSelect(this)">
+    <div class="letter">1</div>
+    <div class="content">
+      <h3>首页 Feed（瀑布流）</h3>
+      <p>双列瀑布流展示已发布的笔记卡片，每张卡片包含封面图、标题、作者头像、点赞数。下拉刷新，滚动加载更多。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="detail" onclick="toggleSelect(this)">
+    <div class="letter">2</div>
+    <div class="content">
+      <h3>笔记详情页</h3>
+      <p>全宽大图展示、笔记标题和正文、互动数据。底部评论列表（支持加载更多）。发表评论入口。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="publish" onclick="toggleSelect(this)">
+    <div class="letter">3</div>
+    <div class="content">
+      <h3>发布笔记页</h3>
+      <p>上传封面图（调用预签名 URL 直传 MinIO）、填写标题和正文、选择草稿或直接发布。支持存草稿功能。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="profile" onclick="toggleSelect(this)">
+    <div class="letter">4</div>
+    <div class="content">
+      <h3>个人主页（简化版）</h3>
+      <p>展示当前模拟用户的基本信息、已发布笔记的瀑布流列表。点击笔记进入详情。v1 可简化为一个入口链接。</p>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:2rem;">
+  <h3>预选方案（推荐）</h3>
+  <div class="cards">
+    <div class="card" data-choice="core3" onclick="toggleSelect(this)" style="border:2px solid var(--accent,#ec4899);background:var(--accent-bg,#fdf2f8);">
+      <div class="card-body">
+        <h3>核心三页面：Feed + 详情 + 发布</h3>
+        <p>最小可用 MVP，覆盖"浏览-查看-发布"完整闭环。个人主页放到 v2，先聚焦核心体验。</p>
+      </div>
+    </div>
+  </div>
+</div>
+
+<p class="subtitle" style="margin-top:1.5rem;">可以多选，也可以点击预选方案卡片。比如只要前3个核心页面，或全部4个。</p>

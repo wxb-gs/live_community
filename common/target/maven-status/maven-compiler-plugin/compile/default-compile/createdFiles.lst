@@ -1,0 +1,13 @@
+com\example\common\CommentResponse.class
+com\example\common\NoteRpcService.class
+com\example\common\PresignedUrlResponse.class
+com\example\common\NoteDetailResponse.class
+com\example\common\PresignedUrlRequest.class
+com\example\common\CreateDraftResponse.class
+com\example\common\Result.class
+com\example\common\LeafRpcService.class
+com\example\common\CommentRequest.class
+com\example\common\PublishNoteRequest.class
+com\example\common\IdResponse.class
+com\example\common\UploadRpcService.class
+com\example\common\CreateDraftRequest.class

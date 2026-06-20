@@ -1,0 +1,106 @@
+<h2>笔记服务 — 模块结构与接口契约</h2>
+<p class="subtitle">新增 note-service，通过 Dubbo RPC 与 gateway 通信，复用 upload-service</p>
+
+<div class="section">
+  <h3>项目模块总览</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+spring-cloud-test/
+├── pom.xml                    # 父 POM（加 Leaf、Cassandra 依赖管理）
+├── common/                    # 共享 DTO + RPC 接口
+│   └── com.example.common/
+│       ├── Result.java
+│       ├── UploadRpcService.java        # 已有
+│       ├── PresignedUrlRequest.java     # 已有
+│       ├── PresignedUrlResponse.java    # 已有
+│       ├── <b>NoteRpcService.java</b>          # 新增
+│       ├── <b>CreateDraftRequest.java</b>      # 新增
+│       ├── <b>NoteDetailResponse.java</b>      # 新增
+│       └── ...
+├── gateway/                   # HTTP 入口 + Dubbo consumer
+│   └── controller/
+│       ├── UploadController.java        # 已有
+│       └── <b>NoteController.java</b>          # 新增
+├── upload-service/            # Dubbo provider + MinIO
+│   └── rpc/
+│       └── UploadRpcServiceImpl.java    # 已有
+└── <b>note-service/</b>              # 新增模块
+    ├── pom.xml
+    └── src/main/java/
+        ├── NoteServiceApplication.java
+        ├── rpc/
+        │   └── NoteRpcServiceImpl.java  # @DubboService
+        ├── service/
+        │   ├── DraftService.java        # 草稿 CRUD
+        │   ├── PublishService.java      # 发布流程
+        │   └── CommentService.java      # 评论服务
+        ├── repository/
+        │   ├── NoteRepository.java      # MySQL
+        │   └── CommentRepository.java   # Cassandra
+        └── config/
+            ├── LeafConfig.java
+            └── CassandraConfig.java
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>Dubbo RPC 接口（common 模块）</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:14px">
+    <tr style="background:var(--bg-secondary)">
+      <th style="text-align:left;padding:8px">方法</th>
+      <th style="text-align:left;padding:8px">请求</th>
+      <th style="text-align:left;padding:8px">响应</th>
+      <th style="text-align:left;padding:8px">说明</th>
+    </tr>
+    <tr>
+      <td style="padding:8px"><code>createDraft</code></td>
+      <td style="padding:8px">userId, title</td>
+      <td style="padding:8px">draftId, createdAt</td>
+      <td style="padding:8px">创建草稿，Leaf 号段生成 ID</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><code>updateDraft</code></td>
+      <td style="padding:8px">draftId, title, bodyMd, tags, coverUrl, location</td>
+      <td style="padding:8px">success</td>
+      <td style="padding:8px">保存/更新草稿内容</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><code>publishNote</code></td>
+      <td style="padding:8px">draftId</td>
+      <td style="padding:8px">noteId, publishedAt</td>
+      <td style="padding:8px">发布：md→OSS, 状态→published</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><code>getNoteDetail</code></td>
+      <td style="padding:8px">noteId, userId(optional)</td>
+      <td style="padding:8px">NoteDetail (含评论第一页)</td>
+      <td style="padding:8px">CompletableFuture 并行查笔记+评论</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><code>deleteNote</code></td>
+      <td style="padding:8px">noteId, userId</td>
+      <td style="padding:8px">success</td>
+      <td style="padding:8px">软删除，状态→deleted</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>Gateway NoteController</h3>
+  <div class="mockup">
+    <div class="mockup-header">对外 REST API（gateway 8080）</div>
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+POST   /api/note/draft          → @DubboReference NoteRpcService.createDraft()
+PUT    /api/note/draft/{id}     → @DubboReference NoteRpcService.updateDraft()
+POST   /api/note/publish/{id}   → @DubboReference NoteRpcService.publishNote()
+GET    /api/note/{id}           → @DubboReference NoteRpcService.getNoteDetail()
+DELETE /api/note/{id}           → @DubboReference NoteRpcService.deleteNote()
+</pre>
+    </div>
+  </div>
+  <p style="margin-top:8px;color:var(--text-secondary)">Controller 只做参数校验 + 结果转换，不包含业务逻辑。限流用 @SentinelResource。</p>
+</div>

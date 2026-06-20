@@ -1,0 +1,9 @@
+com\example\leaf\segment\model\Segment.class
+com\example\leaf\rpc\LeafRpcServiceImpl.class
+com\example\leaf\controller\LeafController.class
+com\example\leaf\LeafServiceApplication.class
+com\example\leaf\segment\LeafAllocDao$SegmentAllocResult.class
+com\example\leaf\segment\LeafAllocDao.class
+com\example\leaf\segment\model\SegmentBuffer.class
+com\example\leaf\snowflake\SnowflakeIdGenerator.class
+com\example\leaf\segment\SegmentIdGenerator.class

@@ -1,0 +1,8 @@
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\controller\LeafController.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\LeafServiceApplication.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\rpc\LeafRpcServiceImpl.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\segment\LeafAllocDao.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\segment\model\Segment.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\segment\model\SegmentBuffer.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\segment\SegmentIdGenerator.java
+C:\lib\codes\java_projects\spring_cloud_test\leaf-service\src\main\java\com\example\leaf\snowflake\SnowflakeIdGenerator.java

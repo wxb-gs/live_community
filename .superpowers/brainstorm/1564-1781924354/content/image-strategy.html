@@ -1,0 +1,67 @@
+<h2>图片展示策略 &amp; 项目目录结构</h2>
+<p class="subtitle">小红书的核心是图片浏览体验——封面图和详情大图必须能正常展示</p>
+
+<div class="options" style="margin-bottom:1.5rem;">
+  <div class="option" data-choice="presigned-get" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>方案A：后端生成 GET 预签名 URL（推荐）</h3>
+      <p>列表和详情接口返回时，附带 objectKey 对应的 GET 预签名 URL（有效期可设较长，如 24 小时）。安全且无需改动 MinIO 配置。</p>
+    </div>
+  </div>
+  <div class="option" data-choice="public-bucket" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>方案B：MinIO Bucket 设为公开读</h3>
+      <p>通过 MinIO Policy 将 notes/uploads bucket 设为公开可读。前端直接拼 URL 访问。简单但安全性降低。</p>
+    </div>
+  </div>
+</div>
+
+<div class="mockup">
+  <div class="mockup-header">项目目录结构（front/）</div>
+  <div class="mockup-body">
+    <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;font-size:0.8rem;line-height:1.7;">
+front/
+├── index.html
+├── package.json
+├── vite.config.ts
+├── tailwind.config.js
+├── tsconfig.json
+├── src/
+│   ├── main.tsx                  ← React 入口
+│   ├── App.tsx                   ← 路由 + TabBar 布局
+│   ├── config.ts                 ← API_BASE_URL, MOCK_USER
+│   ├── api/
+│   │   └── index.ts              ← fetch 封装 + 所有 API 调用
+│   ├── pages/
+│   │   ├── FeedPage.tsx          ← 瀑布流首页
+│   │   ├── NoteDetailPage.tsx    ← 笔记详情 + 评论
+│   │   └── PublishPage.tsx       ← 发布笔记（草稿 + 上传 + 发布）
+│   ├── components/
+│   │   ├── TabBar.tsx            ← 底部导航栏
+│   │   ├── NoteCard.tsx          ← 瀑布流卡片
+│   │   ├── WaterfallLayout.tsx   ← CSS columns 瀑布流容器
+│   │   ├── CommentItem.tsx       ← 单条评论
+│   │   ├── CommentInput.tsx      ← 评论输入框
+│   │   ├── ImageUploader.tsx     ← 图片上传组件（预签名直传）
+│   │   └── LoadingSkeleton.tsx   ← 骨架屏/加载态
+│   └── types/
+│       └── index.ts              ← TypeScript 类型定义
+    </pre>
+  </div>
+</div>
+
+<div class="pros-cons" style="margin-top:1rem;">
+  <div class="pros"><h4>设计原则</h4><ul>
+    <li>每个组件一个文件，职责单一</li>
+    <li>api/index.ts 集中管理所有 HTTP 请求</li>
+    <li>TypeScript 类型统一在 types/ 定义</li>
+    <li>零额外依赖（fetch + CSS columns）</li>
+  </ul></div>
+  <div class="cons"><h4>需要后端配合</h4><ul>
+    <li>新增 GET /api/note/list 接口（已确认）</li>
+    <li>列表响应中附带封面图 GET URL（推荐方案 A）</li>
+    <li>note-service NoteService.java 新增 listPublished()</li>
+  </ul></div>
+</div>

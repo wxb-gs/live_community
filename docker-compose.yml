@@ -1,0 +1,185 @@
+services:
+  # ==================== Infrastructure ====================
+
+  nacos:
+    image: nacos/nacos-server:v2.3.0
+    container_name: nacos
+    environment:
+      MODE: standalone
+      PREFER_HOST_MODE: hostname
+    ports:
+      - "18848:8848"
+      - "19848:9848"
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:8848/nacos/v1/console/health/readiness"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - live-community
+
+  mysql:
+    image: mysql:8.0
+    container_name: mysql
+    environment:
+      MYSQL_ROOT_PASSWORD: root
+      MYSQL_DATABASE: live_community
+    ports:
+      - "13306:3306"
+    volumes:
+      - mysql-data:/var/lib/mysql
+      - ./leaf-service/src/main/resources/sql/init_leaf.sql:/docker-entrypoint-initdb.d/01-init-leaf.sql
+    healthcheck:
+      test: mysqladmin ping -h localhost -u root -proot
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - live-community
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - live-community
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb local/uploads --ignore-existing;
+      mc mb local/notes --ignore-existing;
+      echo 'MinIO buckets created';
+      exit 0
+      "
+    networks:
+      - live-community
+
+  cassandra:
+    image: cassandra:latest
+    container_name: cassandra
+    environment:
+      CASSANDRA_CLUSTER_NAME: live-community
+    ports:
+      - "19042:9042"
+    volumes:
+      - cassandra-data:/var/lib/cassandra
+    healthcheck:
+      test: cqlsh -e "DESCRIBE KEYSPACES" localhost 9042
+      interval: 15s
+      timeout: 10s
+      retries: 30
+      start_period: 60s
+    networks:
+      - live-community
+
+  # ==================== Application Services ====================
+
+  leaf-service:
+    build: ./leaf-service
+    container_name: leaf-service
+    ports:
+      - "8082:8082"
+      - "20881:20881"
+    environment:
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+    depends_on:
+      nacos:
+        condition: service_healthy
+      mysql:
+        condition: service_healthy
+    networks:
+      - live-community
+
+  upload-service:
+    build: ./upload-service
+    container_name: upload-service
+    ports:
+      - "8081:8081"
+      - "20880:20880"
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+    depends_on:
+      nacos:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+    networks:
+      - live-community
+
+  note-service:
+    build: ./note-service
+    container_name: note-service
+    ports:
+      - "8083:8083"
+      - "20882:20882"
+    environment:
+      MINIO_ENDPOINT: http://minio:9000
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+      SPRING_CASSANDRA_CONTACT-POINTS: cassandra
+    depends_on:
+      nacos:
+        condition: service_healthy
+      minio:
+        condition: service_healthy
+      minio-init:
+        condition: service_completed_successfully
+      cassandra:
+        condition: service_healthy
+      leaf-service:
+        condition: service_started
+    networks:
+      - live-community
+
+  gateway:
+    build: ./gateway
+    container_name: gateway
+    ports:
+      - "8080:8080"
+    environment:
+      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
+      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
+    depends_on:
+      nacos:
+        condition: service_healthy
+      upload-service:
+        condition: service_started
+      note-service:
+        condition: service_started
+    networks:
+      - live-community
+
+networks:
+  live-community:
+    driver: bridge
+
+volumes:
+  mysql-data:
+  minio-data:
+  cassandra-data:

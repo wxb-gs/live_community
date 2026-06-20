@@ -1,0 +1,109 @@
+<h2>笔记服务 — Leaf ID · 错误处理 · 测试</h2>
+<p class="subtitle">基础设施集成与工程质量</p>
+
+<div class="section">
+  <h3>美团 Leaf 分布式 ID 集成</h3>
+  <div class="mockup">
+    <div class="mockup-header">两种模式分工</div>
+    <table style="width:100%; border-collapse:collapse; font-size:14px">
+      <tr style="background:var(--bg-secondary)">
+        <th style="text-align:left;padding:8px">模式</th>
+        <th style="text-align:left;padding:8px">用途</th>
+        <th style="text-align:left;padding:8px">原理</th>
+        <th style="text-align:left;padding:8px">性能</th>
+      </tr>
+      <tr>
+        <td style="padding:8px"><strong>号段 (Segment)</strong></td>
+        <td style="padding:8px">笔记 ID</td>
+        <td style="padding:8px">DB 批量取号，本地缓存，用完再取</td>
+        <td style="padding:8px">极高，无网络调用</td>
+      </tr>
+      <tr>
+        <td style="padding:8px"><strong>雪花 (Snowflake)</strong></td>
+        <td style="padding:8px">评论 ID</td>
+        <td style="padding:8px">workerId + 时间戳 + 序列号，本地生成</td>
+        <td style="padding:8px">极高，完全本地</td>
+      </tr>
+    </table>
+  </div>
+  <p style="margin-top:12px">Leaf Server 独立部署，note-service 通过 HTTP 调用获取号段。Snowflake 通过 ZooKeeper 分配 workerId。</p>
+</div>
+
+<div class="section">
+  <h3>错误处理策略</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+Gateway NoteController 异常处理：
+
+  draftId 不存在          → Result.error(404, "草稿不存在")
+  发布时 draftId 非本人    → Result.error(403, "无权操作")
+  重复发布                 → Result.error(409, "笔记已发布")
+  Leaf ID 生成失败         → Result.error(503, "服务繁忙，请重试")
+  Cassandra 超时           → Result.error(500, "评论加载失败"), 笔记本体仍返回
+  MinIO 上传失败           → Result.error(500, "发布失败，请重试"), 事务回滚
+
+降级策略：
+  - 笔记详情接口：Cassandra 超时时 comments 字段返回空列表，不阻塞笔记数据
+  - 笔记列表接口：不查 Cassandra，count 字段用 MySQL 冗余值
+</pre>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>测试策略</h3>
+  <table style="width:100%; border-collapse:collapse; font-size:14px">
+    <tr style="background:var(--bg-secondary)">
+      <th style="text-align:left;padding:8px">层级</th>
+      <th style="text-align:left;padding:8px">范围</th>
+      <th style="text-align:left;padding:8px">工具</th>
+    </tr>
+    <tr>
+      <td style="padding:8px"><strong>单元测试</strong></td>
+      <td style="padding:8px">DraftService, PublishService, CommentService</td>
+      <td style="padding:8px">JUnit 5 + Mockito（Mock Repository）</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><strong>Repository 测试</strong></td>
+      <td style="padding:8px">NoteRepository(MySQL), CommentRepository(Cassandra)</td>
+      <td style="padding:8px">Testcontainers（MySQL + Cassandra 容器）</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><strong>RPC 集成测试</strong></td>
+      <td style="padding:8px">NoteRpcServiceImpl 端到端</td>
+      <td style="padding:8px">Testcontainers + Dubbo 内嵌启动</td>
+    </tr>
+    <tr>
+      <td style="padding:8px"><strong>Gateway 测试</strong></td>
+      <td style="padding:8px">NoteController HTTP 层</td>
+      <td style="padding:8px">MockMvc + Mock Dubbo Reference</td>
+    </tr>
+  </table>
+</div>
+
+<div class="section">
+  <h3>note-service 依赖清单</h3>
+  <div class="mockup">
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+新增依赖（父 POM dependencyManagement）：
+  - com.baomidou:mybatis-plus-spring-boot3-starter   # MySQL ORM
+  - com.meituan.leaf:leaf-core                        # Leaf SDK
+  - org.springframework.boot:spring-boot-starter-data-cassandra
+  - org.testcontainers:testcontainers                 # 测试（test scope）
+
+note-service/pom.xml：
+  - common 模块
+  - dubbo-spring-boot-starter
+  - dubbo-registry-nacos
+  - mybatis-plus-spring-boot3-starter
+  - spring-boot-starter-data-cassandra
+  - leaf-core
+  - mysql-connector-j
+  - spring-boot-starter-test (test)
+  - testcontainers (test)
+</pre>
+    </div>
+  </div>
+</div>

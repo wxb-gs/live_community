@@ -1,0 +1,58 @@
+<h2>整体架构设计</h2>
+<p class="subtitle">三层结构：前端 SPA → Gateway REST API → 后端微服务</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">页面路由结构（React Router v6）</div>
+    <div class="mockup-body" style="font-size:0.9rem;line-height:1.8;">
+      <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;">
+/                    → FeedPage (瀑布流首页)
+/note/:noteId        → NoteDetailPage (笔记详情 + 评论)
+/publish             → PublishPage (发布笔记)
+      </pre>
+      <div style="margin-top:1rem;">
+        <b>底部 TabBar 导航</b>：<br/>
+        🏠 发现 | ➕ 发布 | 💬 消息 (预留)
+      </div>
+    </div>
+  </div>
+
+  <div class="mockup">
+    <div class="mockup-header">组件树</div>
+    <div class="mockup-body" style="font-size:0.85rem;line-height:1.8;">
+      <pre style="margin:0;background:#1e1e2e;color:#cdd6f4;padding:1rem;border-radius:8px;">
+App
+├── TabBar (底部导航)
+├── FeedPage
+│   ├── WaterfallLayout
+│   │   └── NoteCard[] (卡片)
+│   └── LoadingSkeleton
+├── NoteDetailPage
+│   ├── ImageHero (大图)
+│   ├── NoteContent
+│   ├── CommentList
+│   │   └── CommentItem[]
+│   └── CommentInput
+└── PublishPage
+    ├── ImageUploader
+    ├── TitleInput
+    └── ContentEditor
+      </pre>
+    </div>
+  </div>
+</div>
+
+<div class="mockup" style="margin-top:1.5rem;">
+  <div class="mockup-header">关键技术决策</div>
+  <div class="mockup-body">
+    <table style="width:100%;border-collapse:collapse;text-align:left;">
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">构建工具</td><td style="padding:10px 16px;">Vite 5</td></tr>
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">UI 框架</td><td style="padding:10px 16px;">React 18 + Tailwind CSS 3</td></tr>
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">路由</td><td style="padding:10px 16px;">React Router v6</td></tr>
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">状态管理</td><td style="padding:10px 16px;">React 内置 (useState + useContext) — 3页面无需引入 Redux</td></tr>
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">HTTP 客户端</td><td style="padding:10px 16px;">fetch API (封装 api.ts) — 零额外依赖</td></tr>
+      <tr style="border-bottom:1px solid #e2e8f0;"><td style="padding:10px 16px;font-weight:600;">瀑布流</td><td style="padding:10px 16px;">CSS columns 方案 — 纯 CSS 实现，无额外库</td></tr>
+      <tr><td style="padding:10px 16px;font-weight:600;">模拟用户</td><td style="padding:10px 16px;">userId=1001, username="小红薯用户" 写死在 src/config.ts</td></tr>
+    </table>
+  </div>
+</div>

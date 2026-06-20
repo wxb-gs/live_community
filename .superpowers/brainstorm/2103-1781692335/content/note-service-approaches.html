@@ -1,0 +1,103 @@
+<h2>笔记服务 — 架构方案对比</h2>
+<p class="subtitle">现有模块：common · gateway · upload-service（Dubbo RPC + MinIO）</p>
+
+<div class="options">
+  <div class="option" data-choice="a" onclick="toggleSelect(this)">
+    <div class="letter">A</div>
+    <div class="content">
+      <h3>新增 note-service 模块（推荐）</h3>
+      <p>新建独立 Dubbo 服务，复用 upload-service 做文件存储，保持职责单一</p>
+    </div>
+  </div>
+  <div class="option" data-choice="b" onclick="toggleSelect(this)">
+    <div class="letter">B</div>
+    <div class="content">
+      <h3>扩展 upload-service 为内容服务</h3>
+      <p>把笔记、草稿、评论逻辑都加到 upload-service，一个服务搞定所有内容</p>
+    </div>
+  </div>
+  <div class="option" data-choice="c" onclick="toggleSelect(this)">
+    <div class="letter">C</div>
+    <div class="content">
+      <h3>note-service 用 REST API</h3>
+      <p>新建独立模块，Gateway 通过 HTTP 路由转发，不走 Dubbo RPC</p>
+    </div>
+  </div>
+</div>
+
+<div class="section">
+  <h3>模块依赖关系</h3>
+
+  <div class="mockup">
+    <div class="mockup-header">方案 A：新增 note-service（Dubbo RPC）</div>
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+  Client
+    │  HTTP
+    ▼
+┌──────────────────────────────────────┐
+│  gateway (8080)                      │
+│  NoteController  UploadController    │
+│  @DubboReference NoteRpcService      │
+└──────────────────────────────────────┘
+    │  Dubbo Triple          │  Dubbo Triple
+    ▼                        ▼
+┌──────────────────┐  ┌──────────────────────┐
+│  note-service    │  │  upload-service      │
+│  (20881)         │  │  (20880)             │
+│                  │  │                      │
+│  Draft CRUD      │  │  MinIO presigned URL │
+│  Publish flow    │  │  Markdown file put   │
+│  Leaf ID 生成    │  │  Image upload        │
+│  Cassandra 评论   │  │                      │
+│  MySQL (笔记元数据)│  │                      │
+└──────────────────┘  └──────────────────────┘
+</pre>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top:16px">
+    <div class="mockup-header">方案 B：扩展 upload-service</div>
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+  Client
+    │  HTTP
+    ▼
+┌──────────────────────────────────────┐
+│  gateway (8080)                      │
+│  @DubboReference UploadRpcService    │
+└──────────────────────────────────────┘
+    │  Dubbo Triple (所有接口)
+    ▼
+┌──────────────────────────────────────┐
+│  upload-service (内容单体)            │
+│  MinIO + MySQL + Cassandra + Leaf ID  │
+│  (职责混杂，单点压力大)                │
+└──────────────────────────────────────┘
+</pre>
+    </div>
+  </div>
+
+  <div class="mockup" style="margin-top:16px">
+    <div class="mockup-header">方案 C：note-service REST API</div>
+    <div class="mockup-body" style="font-family:monospace;font-size:13px;line-height:1.6">
+<pre style="margin:0">
+  Client
+    │  HTTP
+    ▼
+┌──────────────────────────────────────┐
+│  gateway (8080)                      │
+│  HTTP 路由 → lb://note-service       │
+└──────────────────────────────────────┘
+    │  HTTP                    │  Dubbo Triple
+    ▼                          ▼
+┌──────────────────┐  ┌──────────────────────┐
+│  note-service    │  │  upload-service      │
+│  @RestController │  │  @DubboService       │
+│  (REST API)      │  │  MinIO               │
+└──────────────────┘  └──────────────────────┘
+  不一致：Gateway 里 Dubbo + HTTP 混用
+</pre>
+    </div>
+  </div>
+</div>

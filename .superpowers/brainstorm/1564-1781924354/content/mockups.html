@@ -1,0 +1,125 @@
+<h2>页面 UI 布局设计</h2>
+<p class="subtitle">小红书风格：双列瀑布流 + 大图详情 + 简洁发布页</p>
+
+<div class="split">
+  <div class="mockup">
+    <div class="mockup-header">首页 Feed — 双列瀑布流</div>
+    <div class="mockup-body" style="padding:0.75rem;background:#f5f5f5;border-radius:8px;">
+      <div class="mock-nav" style="margin-bottom:0.5rem;">🔍 发现  |  关注  |  附近</div>
+      <div style="display:flex;gap:8px;">
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#fff;border-radius:8px;overflow:hidden;">
+            <div class="placeholder" style="height:140px;background:linear-gradient(135deg,#667eea,#764ba2);">封面图</div>
+            <div style="padding:0.5rem;font-size:0.75rem;">
+              <b>杭州小众咖啡馆探店 ☕</b>
+              <div style="display:flex;align-items:center;gap:4px;margin-top:4px;color:#999;">
+                <span style="width:16px;height:16px;background:#ddd;border-radius:50%;display:inline-block;"></span>
+                小红薯用户  ❤️ 128
+              </div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:8px;overflow:hidden;">
+            <div class="placeholder" style="height:100px;background:linear-gradient(135deg,#f093fb,#f5576c);">封面图</div>
+            <div style="padding:0.5rem;font-size:0.75rem;">
+              <b>春日穿搭分享 🌸</b>
+              <div style="margin-top:4px;color:#999;">❤️ 256</div>
+            </div>
+          </div>
+        </div>
+        <div style="flex:1;display:flex;flex-direction:column;gap:8px;">
+          <div style="background:#fff;border-radius:8px;overflow:hidden;">
+            <div class="placeholder" style="height:110px;background:linear-gradient(135deg,#4facfe,#00f2fe);">封面图</div>
+            <div style="padding:0.5rem;font-size:0.75rem;">
+              <b>周末徒步路线推荐</b>
+              <div style="margin-top:4px;color:#999;">❤️ 89</div>
+            </div>
+          </div>
+          <div style="background:#fff;border-radius:8px;overflow:hidden;">
+            <div class="placeholder" style="height:150px;background:linear-gradient(135deg,#43e97b,#38f9d7);">封面图</div>
+            <div style="padding:0.5rem;font-size:0.75rem;">
+              <b>自制美食教程 简单又好吃</b>
+              <div style="margin-top:4px;color:#999;">❤️ 367</div>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+
+  <div style="display:flex;flex-direction:column;gap:1rem;">
+    <div class="mockup">
+      <div class="mockup-header">笔记详情页</div>
+      <div class="mockup-body" style="padding:0.5rem;background:#f5f5f5;border-radius:8px;">
+        <div class="placeholder" style="height:160px;background:linear-gradient(135deg,#667eea,#764ba2);">封面大图（全宽）</div>
+        <div style="padding:0.5rem;font-size:0.75rem;">
+          <div style="display:flex;align-items:center;gap:8px;margin-bottom:8px;">
+            <span style="width:24px;height:24px;background:#ddd;border-radius:50%;display:inline-block;"></span>
+            <b>小红薯用户</b>
+          </div>
+          <b style="font-size:0.85rem;">杭州小众咖啡馆探店 ☕</b>
+          <p style="color:#666;margin:4px 0;">隐藏在西湖边的小众咖啡馆，手冲咖啡非常正宗，环境安静适合办公...</p>
+          <div style="color:#999;">❤️ 128 &nbsp; 💬 23 &nbsp; ⭐ 收藏</div>
+          <hr style="border-color:#eee;margin:8px 0;"/>
+          <div style="color:#999;font-size:0.7rem;">💬 评论 (23)</div>
+          <div style="margin-top:4px;display:flex;gap:8px;">
+            <span style="width:20px;height:20px;background:#eee;border-radius:50%;"></span>
+            <div style="flex:1;font-size:0.7rem;"><b>咖啡爱好者：</b>求地址！</div>
+          </div>
+          <div style="margin-top:4px;display:flex;gap:8px;">
+            <span style="width:20px;height:20px;background:#eee;border-radius:50%;"></span>
+            <div style="flex:1;font-size:0.7rem;"><b>旅行达人：</b>环境确实不错</div>
+          </div>
+          <div class="mock-input" style="margin-top:8px;">发表评论...</div>
+        </div>
+      </div>
+    </div>
+
+    <div class="mockup">
+      <div class="mockup-header">发布笔记页</div>
+      <div class="mockup-body" style="padding:0.5rem;background:#f5f5f5;border-radius:8px;">
+        <div style="font-size:0.75rem;">
+          <div class="placeholder" style="height:100px;border:2px dashed #ccc;display:flex;align-items:center;justify-content:center;color:#999;">
+            📷 点击上传封面图
+          </div>
+          <div class="mock-input" style="margin-top:8px;">输入标题...</div>
+          <div class="mock-input" style="margin-top:4px;height:80px;">分享你的内容...</div>
+          <div style="display:flex;gap:8px;margin-top:8px;">
+            <button class="mock-button" style="flex:1;background:#f0f0f0;color:#666;">存草稿</button>
+            <button class="mock-button" style="flex:1;background:#ff2442;color:#fff;">发布</button>
+          </div>
+        </div>
+      </div>
+    </div>
+  </div>
+</div>
+
+<div class="section" style="margin-top:1.5rem;">
+  <h3>视觉风格设定</h3>
+  <div class="cards">
+    <div class="card">
+      <div class="card-body">
+        <h3>配色</h3>
+        <div style="display:flex;gap:8px;margin-top:4px;">
+          <span style="width:32px;height:32px;background:#ff2442;border-radius:50%;" title="小红书品牌红"></span>
+          <span style="width:32px;height:32px;background:#1a1a1a;border-radius:50%;" title="主文字"></span>
+          <span style="width:32px;height:32px;background:#999999;border-radius:50%;" title="次要文字"></span>
+          <span style="width:32px;height:32px;background:#f5f5f5;border-radius:50%;border:1px solid #eee;" title="背景灰"></span>
+          <span style="width:32px;height:32px;background:#ffffff;border-radius:50%;border:1px solid #eee;" title="卡片白"></span>
+        </div>
+        <p style="margin-top:4px;font-size:0.8rem;">品牌红 #ff2442 · 深黑 #1a1a1a · 灰色 #999 · 背景 #f5f5f5</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>圆角 &amp; 间距</h3>
+        <p style="font-size:0.8rem;">卡片圆角 rounded-xl (12px)<br/>按钮圆角 rounded-full (全圆)<br/>页面内边距 p-4 (16px)<br/>卡片间距 gap-2 (8px)</p>
+      </div>
+    </div>
+    <div class="card">
+      <div class="card-body">
+        <h3>字体</h3>
+        <p style="font-size:0.8rem;">系统默认字体栈<br/>标题 15px font-bold<br/>正文 13px<br/>辅助文字 11px text-gray-400</p>
+      </div>
+    </div>
+  </div>
+</div>

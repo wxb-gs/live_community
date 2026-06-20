@@ -1,0 +1,4 @@
+com\example\upload\rpc\UploadRpcServiceImpl.class
+com\example\upload\UploadServiceApplication.class
+com\example\upload\config\MinioConfig.class
+com\example\upload\controller\UploadController.class
