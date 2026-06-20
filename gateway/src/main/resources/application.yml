@@ -10,3 +10,6 @@ dubbo:
     name: gateway
   registry:
     address: nacos://localhost:8848
+
+jwt:
+  secret: super-secret-key-change-in-production
