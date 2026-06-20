@@ -6,7 +6,10 @@ import com.example.auth.repository.UserRepository;
 import com.example.auth.security.WechatCodeAuthenticationToken;
 import com.example.auth.service.TokenService;
 import com.example.auth.service.WechatAuthService;
+import com.example.common.IdResponse;
+import com.example.common.LeafRpcService;
 import com.example.common.Result;
+import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.http.HttpStatus;
 import org.springframework.security.authentication.AuthenticationManager;
 import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
@@ -26,6 +29,9 @@ public class AuthController {
     private final PasswordEncoder passwordEncoder;
     private final WechatAuthService wechatAuthService;
 
+    @DubboReference(check = false)
+    private LeafRpcService leafRpcService;
+
     public AuthController(AuthenticationManager authManager, TokenService tokenService,
                           UserRepository userRepository, PasswordEncoder passwordEncoder,
                           WechatAuthService wechatAuthService) {
@@ -41,8 +47,25 @@ public class AuthController {
         if (userRepository.findByUsername(req.getUsername()).isPresent()) {
             throw new ResponseStatusException(HttpStatus.CONFLICT, "用户名已存在");
         }
-        throw new ResponseStatusException(HttpStatus.NOT_IMPLEMENTED,
-                "Register will be integrated via leaf-service. Use POST /login for now.");
+
+        long now = System.currentTimeMillis();
+        IdResponse idResp = leafRpcService.generateSegmentId("user");
+        long userId = idResp.getId();
+
+        UserEntity user = new UserEntity();
+        user.setUserId(userId);
+        user.setUsername(req.getUsername());
+        user.setPassword(passwordEncoder.encode(req.getPassword()));
+        user.setNickname(req.getNickname() != null ? req.getNickname() : req.getUsername());
+        user.setStatus("ACTIVE");
+        user.setCreatedAt(now);
+        user.setUpdatedAt(now);
+        userRepository.insert(user);
+
+        LoginRequest loginReq = new LoginRequest();
+        loginReq.setUsername(req.getUsername());
+        loginReq.setPassword(req.getPassword());
+        return login(loginReq);
     }
 
     @PostMapping("/login")
