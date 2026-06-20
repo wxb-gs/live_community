@@ -7,6 +7,7 @@ import com.example.common.PresignedUrlResponse;
 import com.example.common.Result;
 import com.example.common.UploadRpcService;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.GetMapping;
 import org.springframework.web.bind.annotation.RequestMapping;
 import org.springframework.web.bind.annotation.RequestParam;
@@ -22,6 +23,7 @@ public class UploadController {
     @GetMapping("/presigned")
     @SentinelResource(value = "upload-presigned", blockHandler = "rateLimitFallback")
     public Result<PresignedUrlResponse> presignedUrl(
+            @AuthenticationPrincipal Long userId,
             @RequestParam String fileName,
             @RequestParam String contentType) {
         PresignedUrlRequest req = new PresignedUrlRequest(fileName, contentType);

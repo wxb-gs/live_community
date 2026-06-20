@@ -3,6 +3,7 @@ package com.example.gateway.controller;
 import com.example.common.*;
 import java.util.List;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
 @RestController
@@ -13,7 +14,9 @@ public class NoteController {
     private NoteRpcService noteRpcService;
 
     @PostMapping("/draft")
-    public Result<CreateDraftResponse> createDraft(@RequestBody CreateDraftRequest request) {
+    public Result<CreateDraftResponse> createDraft(@AuthenticationPrincipal Long userId,
+                                                    @RequestBody CreateDraftRequest request) {
+        request.setUserId(userId);
         CreateDraftResponse resp = noteRpcService.createDraft(request);
         return Result.ok(resp);
     }
@@ -31,7 +34,9 @@ public class NoteController {
     }
 
     @PostMapping("/comment")
-    public Result<CommentResponse> addComment(@RequestBody CommentRequest request) {
+    public Result<CommentResponse> addComment(@AuthenticationPrincipal Long userId,
+                                               @RequestBody CommentRequest request) {
+        request.setUserId(userId);
         CommentResponse resp = noteRpcService.addComment(request);
         return Result.ok(resp);
     }
