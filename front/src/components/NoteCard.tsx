@@ -1,6 +1,5 @@
 import { useNavigate } from 'react-router-dom';
 import type { NoteSummary } from '../types';
-import { MOCK_USER } from '../config';
 import { toExternalUrl } from '../api';
 
 export default function NoteCard({ note }: { note: NoteSummary }) {
@@ -40,9 +39,9 @@ export default function NoteCard({ note }: { note: NoteSummary }) {
         </h3>
         <div className="flex items-center gap-1.5 mt-2.5">
           <div className="w-5 h-5 rounded-full bg-gradient-to-br from-rose-300 to-brand flex items-center justify-center text-[9px] text-white font-semibold">
-            {MOCK_USER.username.charAt(0)}
+            {note.title.charAt(0)}
           </div>
-          <span className="text-[11px] text-text-muted font-medium">{MOCK_USER.username}</span>
+          <span className="text-[11px] text-text-muted font-medium">小红书用户</span>
         </div>
       </div>
     </div>

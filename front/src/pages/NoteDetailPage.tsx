@@ -1,7 +1,7 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams } from 'react-router-dom';
 import { fetchNoteDetail, addComment, toExternalUrl } from '../api';
-import { MOCK_USER } from '../config';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { NoteDetail, CommentItem as CommentType } from '../types';
 import CommentItem from '../components/CommentItem';
 import CommentInput from '../components/CommentInput';
@@ -13,6 +13,7 @@ function formatTime(timestamp: number): string {
 
 export default function NoteDetailPage() {
   const { noteId } = useParams<{ noteId: string }>();
+  const currentUser = useCurrentUser();
   const [note, setNote] = useState<NoteDetail | null>(null);
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
@@ -88,22 +89,22 @@ export default function NoteDetailPage() {
             className="w-full aspect-[4/3] bg-gradient-to-br from-rose-300 to-brand flex items-center justify-center text-white/80 text-6xl font-bold"
             style={{ display: 'none' }}
           >
-            {MOCK_USER.username.charAt(0)}
+            {(currentUser?.username || note?.title || 'U').charAt(0)}
           </div>
         </div>
       ) : (
         <div className="w-full aspect-[4/3] bg-gradient-to-br from-rose-300 to-brand flex items-center justify-center text-white/80 text-6xl font-bold">
-          {MOCK_USER.username.charAt(0)}
+          {(currentUser?.username || note?.title || 'U').charAt(0)}
         </div>
       )}
 
       <div className="px-4">
         <div className="flex items-center gap-2.5 py-4">
           <div className="w-9 h-9 rounded-full bg-gradient-to-br from-rose-300 to-brand flex items-center justify-center text-xs text-white font-bold">
-            {MOCK_USER.username.charAt(0)}
+            {(currentUser?.username || note?.title || 'U').charAt(0)}
           </div>
           <div>
-            <span className="text-sm font-semibold text-text-primary">{MOCK_USER.username}</span>
+            <span className="text-sm font-semibold text-text-primary">{currentUser?.username || '小红书用户'}</span>
             <p className="text-[11px] text-text-muted">{formatTime(note.updatedAt || note.createdAt)}</p>
           </div>
         </div>

@@ -1,5 +1,5 @@
 import type { CommentItem as CommentType } from '../types';
-import { MOCK_USER } from '../config';
+import { useCurrentUser } from '../hooks/useCurrentUser';
 
 function formatTime(timestamp: number): string {
   const diff = Date.now() - timestamp;
@@ -11,8 +11,7 @@ function formatTime(timestamp: number): string {
   return `${Math.floor(hours / 24)}天前`;
 }
 
-function Avatar({ userId }: { userId: number }) {
-  const isSelf = userId === MOCK_USER.userId;
+function Avatar({ userId, isSelf }: { userId: number; isSelf: boolean }) {
   const colors = [
     'from-rose-400 to-brand',
     'from-violet-400 to-purple-500',
@@ -21,22 +20,26 @@ function Avatar({ userId }: { userId: number }) {
     'from-sky-400 to-blue-500',
   ];
   const gradient = colors[userId % colors.length];
+  const currentUser = useCurrentUser();
 
   return (
     <div className={`w-8 h-8 rounded-full bg-gradient-to-br ${gradient} flex items-center justify-center text-[10px] text-white font-bold shrink-0`}>
-      {isSelf ? MOCK_USER.username.charAt(0) : `U${userId}`}
+      {isSelf && currentUser ? currentUser.username.charAt(0).toUpperCase() : `U${userId}`}
     </div>
   );
 }
 
 export default function CommentItem({ comment }: { comment: CommentType }) {
+  const currentUser = useCurrentUser();
+  const isSelf = currentUser !== null && comment.userId === currentUser.userId;
+
   return (
     <div className="flex gap-2.5 py-3">
-      <Avatar userId={comment.userId} />
+      <Avatar userId={comment.userId} isSelf={isSelf} />
       <div className="flex-1 min-w-0">
         <div className="flex items-baseline gap-2">
           <span className="text-[12px] font-semibold text-text-primary">
-            {comment.userId === MOCK_USER.userId ? MOCK_USER.username : `用户${comment.userId}`}
+            {isSelf ? currentUser.username : `用户${comment.userId}`}
           </span>
           <span className="text-[11px] text-text-muted">{formatTime(comment.createdAt)}</span>
         </div>
