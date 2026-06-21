@@ -115,6 +115,14 @@ curl http://localhost:8080/api/note/list
 
 curl http://localhost:8080/api/search/note?q=美食
 ```
+## 路线图
+
+- [ ] **内容审核** — 文本敏感词过滤 (DFA 算法) + 图片审核 (对接阿里云/腾讯云内容安全 API)，发布/评论先审后发
+- [ ] **AI 摘要与续写** — 接入 LLM 生成笔记摘要与写作续写建议，摘要结果缓存 Redis 避免重复调用
+- [ ] **私信聊天** — WebSocket 实时通信，消息落库 MySQL + 最近会话 Redis ZSet，支持离线消息拉取
+- [ ] **Feed 流压测** — JMeter/Gatling 对推拉混合 Feed 流做基准压测，产出 QPS/延迟分位数报告
+- [ ] **可观测性** — Micrometer + Prometheus 指标暴露，Grafana 大盘展示各服务 QPS / RT / 错误率
+- [ ] **搜索排序优化** — ES BM25 + 互动权重 (点赞/收藏/评论数) 加权召回，CTR 埋点反馈调参
 
 
 ## vibe coding相关
