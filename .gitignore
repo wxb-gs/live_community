@@ -1,12 +1,32 @@
-# ── Maven ──
+# ── Java & Maven ──
 target/
 *.class
-*.jar
+*.jar.original
 *.war
 *.ear
-*.nar
 dependency-reduced-pom.xml
 !.mvn/wrapper/maven-wrapper.jar
+
+# ── Build & Packaging ──
+build/
+dist/
+output/
+release/
+*.tar
+*.tar.gz
+*.tar.bz2
+*.tar.xz
+*.zip
+*.gz
+*.bz2
+*.rar
+*.7z
+*.deb
+*.rpm
+*.dockerignore
+# Docker build context (not the Dockerfile itself)
+!Dockerfile
+!.dockerignore
 
 # ── IDE ──
 # IntelliJ IDEA

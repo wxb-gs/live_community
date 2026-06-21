@@ -8,13 +8,61 @@
 
 **场景**：文件已提交到 Git，后来添加到 `.gitignore`，但 Git 仍然在追踪它们。
 
-**原理**：`.gitignore` 只对未追踪（untracked）文件生效，已追踪文件不受影响。需要先从 Git 索引中移除，再重新添加。
+### 为什么 .gitignore 不生效？
+
+`.gitignore` **只对未追踪（untracked）文件生效**。一旦文件被 `git add` 加入索引（index），Git 就会持续追踪它，后续修改 `.gitignore` 对它无效。
+
+可以用一句话理解：**`.gitignore` 是门卫，只拦没进门的人，已经进来的不管。**
+
+### 为什么 git rm -r --cached . 可以解决问题？
+
+Git 追踪文件分为两个区域：
+
+| 区域 | 说明 |
+|------|------|
+| 工作区（working tree） | 磁盘上真实的文件 |
+| 暂存区/索引（index / staging） | Git 追踪列表，决定哪些文件被版本控制 |
+
+核心思路：**把索引清空，再用 `git add .` 重建，重建时 `.gitignore` 就会生效。**
+
+```
+执行前：索引包含所有文件（含 target/*.class 等）
+  ↓ git rm -r --cached .    清空索引，工作区文件不受影响
+  ↓ git add .               重新扫描工作区，.gitignore 过滤掉不应追踪的文件
+执行后：索引只包含 .gitignore 允许的文件
+```
+
+### 命令拆解：git rm -r --cached .
+
+| 参数 | 含义 |
+|------|------|
+| `rm` | 从 Git 中移除文件 |
+| `-r` | 递归，处理目录 |
+| `--cached` | **只操作索引，不动工作区** — 这是关键，不加会删除本地文件！ |
+| `.` | 当前目录下所有文件 |
+
+> `--cached` 是安全阀：没有它，`git rm` 会把工作区的文件一并删掉。
+
+### git rm -r --cached . 会删除所有文件吗？
+
+**不会删本地文件，但会清空整个 Git 索引。** 这听起来危险，实际是安全的：
+
+1. 工作区文件原封不动
+2. `git add .` 立刻重建索引，且只添加 `.gitignore` 允许的文件
+3. 整个操作可逆：只要没 commit，`git reset` 即可恢复
+
+**唯一要注意的**：commit 之后，其他人 pull 会看到这些文件被删除（因为 Git 认为你"不再需要追踪它们"）。这是正确的行为，但需要提前和团队沟通。
 
 ### 全局清理
 
 ```bash
+# 步骤 1：清空索引（本地文件不动）
 git rm -r --cached .
+
+# 步骤 2：重建索引，.gitignore 规则生效
 git add .
+
+# 步骤 3：提交
 git commit -m "chore: stop tracking files now in .gitignore"
 ```
 
@@ -26,14 +74,14 @@ git add <目录名>/
 git commit -m "chore: stop tracking ignored files in <目录名>"
 ```
 
-> `--cached` 只从 Git 索引移除，**不会删除本地文件**。
+### 跳过个别文件（保留本地但忽略远端变更）
 
-### 警告
+当团队共享一个配置文件模板，但每个人需要本地修改时，不要用 `.gitignore`（那会让文件彻底不被追踪），用 `skip-worktree`：
 
-- 其他人 pull 后这些文件会被删除。如需保留团队共享但忽略个人修改，用 `skip-worktree`：
-  ```bash
-  git update-index --skip-worktree <file>
-  ```
+```bash
+git update-index --skip-worktree <file>    # 忽略后续修改
+git update-index --no-skip-worktree <file> # 恢复追踪
+```
 
 ---
 
