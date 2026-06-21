@@ -4,6 +4,7 @@ import com.example.common.*;
 import com.example.note.entity.CommentEntity;
 import com.example.note.entity.NoteEntity;
 import com.example.note.repository.CommentRepository;
+import com.example.note.repository.NoteMysqlRepository;
 import com.example.note.repository.NoteRepository;
 import io.minio.MinioClient;
 import io.minio.http.Method;
@@ -31,6 +32,7 @@ public class NoteService {
     private final MinioClient minioClient;
     private final InteractionService interactionService;
     private final CommentLikeService commentLikeService;
+    private final NoteMysqlRepository noteMysqlRepository;
 
     @Value("${minio.bucket}")
     private String bucket;
@@ -40,12 +42,14 @@ public class NoteService {
 
     public NoteService(NoteRepository noteRepository, CommentRepository commentRepository,
                        MinioClient minioClient, InteractionService interactionService,
-                       CommentLikeService commentLikeService) {
+                       CommentLikeService commentLikeService,
+                       NoteMysqlRepository noteMysqlRepository) {
         this.noteRepository = noteRepository;
         this.commentRepository = commentRepository;
         this.minioClient = minioClient;
         this.interactionService = interactionService;
         this.commentLikeService = commentLikeService;
+        this.noteMysqlRepository = noteMysqlRepository;
     }
 
     public CreateDraftResponse createDraft(CreateDraftRequest request) {
@@ -64,6 +68,11 @@ public class NoteService {
         entity.setUpdatedAt(now);
 
         noteRepository.save(entity);
+        noteMysqlRepository.upsert(
+            entity.getId(), entity.getUserId(), entity.getTitle(), entity.getContent(),
+            entity.getSummary(), null, null,
+            entity.getStatus(), entity.getCreatedAt(), entity.getUpdatedAt()
+        );
         log.info("Draft created: noteId={}, userId={}", noteId, request.getUserId());
         return new CreateDraftResponse(noteId, "DRAFT");
     }
@@ -91,6 +100,12 @@ public class NoteService {
             entity.setStatus("PUBLISHED");
             entity.setUpdatedAt(System.currentTimeMillis());
             noteRepository.save(entity);
+
+            noteMysqlRepository.upsert(
+                entity.getId(), entity.getUserId(), entity.getTitle(), entity.getContent(),
+                entity.getSummary(), null, null,
+                entity.getStatus(), entity.getCreatedAt(), entity.getUpdatedAt()
+            );
 
             log.info("Note published: noteId={}, objectKey={}", entity.getId(), objectKey);
 
