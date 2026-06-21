@@ -1,8 +1,11 @@
 {
-    "permissions": {
-        "defaultMode": "auto",
-        "allow": [
-            "Bash(*)"
-        ]
-    }
+  "permissions": {
+    "allow": [
+      "Bash(*)"
+    ],
+    "defaultMode": "auto"
+  },
+  "skillOverrides": {
+    "graphify": "off"
+  }
 }

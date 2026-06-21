@@ -15,6 +15,7 @@ import org.springframework.stereotype.Service;
 
 import java.util.Collections;
 import java.util.List;
+import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 import java.util.concurrent.TimeUnit;
@@ -28,6 +29,8 @@ public class NoteService {
     private final NoteRepository noteRepository;
     private final CommentRepository commentRepository;
     private final MinioClient minioClient;
+    private final InteractionService interactionService;
+    private final CommentLikeService commentLikeService;
 
     @Value("${minio.bucket}")
     private String bucket;
@@ -35,10 +38,14 @@ public class NoteService {
     @DubboReference(check = false)
     private LeafRpcService leafRpcService;
 
-    public NoteService(NoteRepository noteRepository, CommentRepository commentRepository, MinioClient minioClient) {
+    public NoteService(NoteRepository noteRepository, CommentRepository commentRepository,
+                       MinioClient minioClient, InteractionService interactionService,
+                       CommentLikeService commentLikeService) {
         this.noteRepository = noteRepository;
         this.commentRepository = commentRepository;
         this.minioClient = minioClient;
+        this.interactionService = interactionService;
+        this.commentLikeService = commentLikeService;
     }
 
     public CreateDraftResponse createDraft(CreateDraftRequest request) {
@@ -133,6 +140,20 @@ public class NoteService {
         resp.setComments(commentEntities.stream()
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList()));
+
+        // Populate interaction counts
+        resp.setLikeCount(interactionService.getCount(InteractionType.LIKE, "note", noteId));
+        resp.setFavoriteCount(interactionService.getCount(InteractionType.FAVORITE, "note", noteId));
+
+        // Populate like counts for comments (from Cassandra via CommentLikeService)
+        if (!resp.getComments().isEmpty()) {
+            List<Long> commentIds = resp.getComments().stream()
+                    .map(CommentResponse::getCommentId).toList();
+            Map<Long, Long> commentLikes = commentLikeService.batchGetCounts(commentIds);
+            resp.getComments().forEach(c ->
+                c.setLikeCount(commentLikes.getOrDefault(c.getCommentId(), 0L)));
+        }
+
         return resp;
     }
 
@@ -188,7 +209,7 @@ public class NoteService {
 
     public List<NoteDetailResponse> listPublishedNotes(int page, int size) {
         List<NoteEntity> entities = noteRepository.findPublished(size);
-        return entities.stream()
+        List<NoteDetailResponse> responses = entities.stream()
                 .map(entity -> {
                     NoteDetailResponse resp = toDetailResponse(entity);
                     if (entity.getObjectKey() != null && !entity.getObjectKey().isEmpty()) {
@@ -208,5 +229,22 @@ public class NoteService {
                     return resp;
                 })
                 .collect(Collectors.toList());
+
+        // Batch-populate like and favorite counts
+        if (!responses.isEmpty()) {
+            List<Long> noteIds = responses.stream().map(NoteDetailResponse::getNoteId).toList();
+            Map<Long, InteractionService.StatusResult> likes =
+                    interactionService.batchStatus(InteractionType.LIKE, "note", noteIds, 0L);
+            Map<Long, InteractionService.StatusResult> favs =
+                    interactionService.batchStatus(InteractionType.FAVORITE, "note", noteIds, 0L);
+            responses.forEach(r -> {
+                InteractionService.StatusResult lr = likes.get(r.getNoteId());
+                if (lr != null) r.setLikeCount(lr.count());
+                InteractionService.StatusResult fr = favs.get(r.getNoteId());
+                if (fr != null) r.setFavoriteCount(fr.count());
+            });
+        }
+
+        return responses;
     }
 }

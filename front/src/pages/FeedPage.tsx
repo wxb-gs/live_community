@@ -1,4 +1,4 @@
-import { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback, useRef } from 'react';
 import { fetchNotes } from '../api';
 import { PAGE_SIZE } from '../config';
 import type { NoteSummary } from '../types';
@@ -12,8 +12,12 @@ export default function FeedPage() {
   const [error, setError] = useState<string | null>(null);
   const [page, setPage] = useState(0);
   const [hasMore, setHasMore] = useState(true);
+  const [refreshing, setRefreshing] = useState(false);
+  const loadingRef = useRef(false);
 
   const loadNotes = useCallback(async (pageNum: number) => {
+    if (loadingRef.current) return;
+    loadingRef.current = true;
     try {
       setError(null);
       const data = await fetchNotes(pageNum, PAGE_SIZE);
@@ -28,6 +32,8 @@ export default function FeedPage() {
       setError(err instanceof Error ? err.message : '加载失败');
     } finally {
       setLoading(false);
+      setRefreshing(false);
+      loadingRef.current = false;
     }
   }, []);
 
@@ -36,26 +42,37 @@ export default function FeedPage() {
   }, [loadNotes]);
 
   const handleRefresh = () => {
+    setRefreshing(true);
     setLoading(true);
     loadNotes(0);
   };
 
   const handleScroll = useCallback(() => {
-    if (loading || !hasMore) return;
+    if (loadingRef.current || !hasMore) return;
     const nearBottom =
-      window.innerHeight + window.scrollY >= document.body.offsetHeight - 400;
+      window.innerHeight + window.scrollY >= document.body.offsetHeight - 500;
     if (nearBottom) {
       setLoading(true);
       loadNotes(page + 1);
     }
-  }, [loading, hasMore, page, loadNotes]);
+  }, [hasMore, page, loadNotes]);
 
   useEffect(() => {
-    window.addEventListener('scroll', handleScroll);
-    return () => window.removeEventListener('scroll', handleScroll);
+    let ticking = false;
+    const onScroll = () => {
+      if (!ticking) {
+        requestAnimationFrame(() => {
+          handleScroll();
+          ticking = false;
+        });
+        ticking = true;
+      }
+    };
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
   }, [handleScroll]);
 
-  if (loading && notes.length === 0) {
+  if (loading && notes.length === 0 && !refreshing) {
     return (
       <div className="pt-4 pb-16">
         <header className="sticky top-0 bg-bg-page/90 backdrop-blur-lg z-30 px-4 py-3">
@@ -72,11 +89,24 @@ export default function FeedPage() {
         <h1 className="text-xl font-bold text-text-primary tracking-tight">发现</h1>
       </header>
 
-      {error && (
+      {refreshing && (
+        <div className="flex items-center justify-center gap-2 py-3 text-text-muted">
+          <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
+          <span className="text-xs font-medium">刷新中...</span>
+        </div>
+      )}
+
+      {error && !refreshing && (
         <div className="px-4 py-2">
-          <div className="bg-red-50 text-red-500 text-sm rounded-xl px-4 py-3 flex items-center justify-between">
-            <span className="truncate mr-2">{error}</span>
-            <button onClick={handleRefresh} className="font-bold text-red-600 shrink-0">
+          <div className="bg-red-50 text-red-500 text-sm rounded-xl px-4 py-3 flex items-center justify-between" role="alert">
+            <span className="truncate mr-2 flex items-center gap-2">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" />
+                <path d="M12 8v4M12 16h.01" />
+              </svg>
+              {error}
+            </span>
+            <button onClick={handleRefresh} className="font-bold text-red-600 shrink-0 hover:bg-red-100 px-3 py-1 rounded-full transition-colors">
               重试
             </button>
           </div>
@@ -101,16 +131,16 @@ export default function FeedPage() {
               <NoteCard key={note.noteId} note={note} />
             ))}
           </WaterfallLayout>
-          {loading && (
+          {loading && notes.length > 0 && (
             <div className="flex items-center justify-center gap-2 py-6 text-text-muted text-sm">
               <div className="w-4 h-4 border-2 border-brand border-t-transparent rounded-full animate-spin" />
               加载中
             </div>
           )}
           {!hasMore && notes.length > 0 && (
-            <div className="text-center py-6 text-text-muted text-xs font-medium tracking-wide">
-              已经到底了
-            </div>
+            <p className="text-center py-6 text-text-muted/60 text-xs font-medium tracking-wide select-none">
+              — 已经到底了 —
+            </p>
           )}
         </div>
       )}

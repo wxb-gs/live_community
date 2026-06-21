@@ -3,7 +3,11 @@ package com.example.auth.controller;
 import com.example.auth.dto.*;
 import com.example.auth.entity.UserEntity;
 import com.example.auth.repository.UserRepository;
-import com.example.auth.security.WechatCodeAuthenticationToken;
+import com.example.auth.security.LoginStrategy;
+import com.example.auth.security.LoginStrategyFactory;
+import com.example.auth.security.LoginType;
+import com.example.auth.service.SmsService;
+import com.example.auth.service.TaobaoAuthService;
 import com.example.auth.service.TokenService;
 import com.example.auth.service.WechatAuthService;
 import com.example.common.IdResponse;
@@ -11,9 +15,6 @@ import com.example.common.LeafRpcService;
 import com.example.common.Result;
 import org.apache.dubbo.config.annotation.DubboReference;
 import org.springframework.http.HttpStatus;
-import org.springframework.security.authentication.AuthenticationManager;
-import org.springframework.security.authentication.UsernamePasswordAuthenticationToken;
-import org.springframework.security.core.Authentication;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.security.crypto.password.PasswordEncoder;
 import org.springframework.web.bind.annotation.*;
@@ -23,24 +24,46 @@ import org.springframework.web.server.ResponseStatusException;
 @RequestMapping("/api/auth")
 public class AuthController {
 
-    private final AuthenticationManager authManager;
+    private final LoginStrategyFactory strategyFactory;
     private final TokenService tokenService;
     private final UserRepository userRepository;
     private final PasswordEncoder passwordEncoder;
     private final WechatAuthService wechatAuthService;
+    private final TaobaoAuthService taobaoAuthService;
+    private final SmsService smsService;
 
     @DubboReference(check = false)
     private LeafRpcService leafRpcService;
 
-    public AuthController(AuthenticationManager authManager, TokenService tokenService,
+    public AuthController(LoginStrategyFactory strategyFactory, TokenService tokenService,
                           UserRepository userRepository, PasswordEncoder passwordEncoder,
-                          WechatAuthService wechatAuthService) {
-        this.authManager = authManager;
+                          WechatAuthService wechatAuthService, TaobaoAuthService taobaoAuthService,
+                          SmsService smsService) {
+        this.strategyFactory = strategyFactory;
         this.tokenService = tokenService;
         this.userRepository = userRepository;
         this.passwordEncoder = passwordEncoder;
         this.wechatAuthService = wechatAuthService;
+        this.taobaoAuthService = taobaoAuthService;
+        this.smsService = smsService;
     }
+
+    // ── Unified login (Strategy pattern dispatch) ────────────────────────
+
+    @PostMapping("/login")
+    public Result<LoginResponse> login(@RequestBody LoginRequest req) {
+        LoginType type = req.getType() != null
+                ? LoginType.fromValue(req.getType())
+                : LoginType.PASSWORD; // backward compatible: default to password
+
+        LoginStrategy strategy = strategyFactory.getStrategy(type);
+        UserEntity user = strategy.authenticate(req);
+
+        TokenService.TokenPair tokens = tokenService.issueTokens(user);
+        return Result.ok(toLoginResponse(user, tokens));
+    }
+
+    // ── Register ─────────────────────────────────────────────────────────
 
     @PostMapping("/register")
     public Result<LoginResponse> register(@RequestBody RegisterRequest req) {
@@ -63,40 +86,35 @@ public class AuthController {
         userRepository.insert(user);
 
         LoginRequest loginReq = new LoginRequest();
+        loginReq.setType(LoginType.PASSWORD.getValue());
         loginReq.setUsername(req.getUsername());
         loginReq.setPassword(req.getPassword());
         return login(loginReq);
     }
 
-    @PostMapping("/login")
-    public Result<LoginResponse> login(@RequestBody LoginRequest req) {
-        Authentication auth = authManager.authenticate(
-                new UsernamePasswordAuthenticationToken(req.getUsername(), req.getPassword()));
-        Long userId = (Long) auth.getPrincipal();
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
-
-        TokenService.TokenPair tokens = tokenService.issueTokens(user);
-        return Result.ok(toLoginResponse(user, tokens));
-    }
-
-    @PostMapping("/wechat/login")
-    public Result<LoginResponse> wechatLogin(@RequestBody WechatLoginRequest req) {
-        Authentication auth = authManager.authenticate(
-                new WechatCodeAuthenticationToken(req.getCode()));
-        Long userId = (Long) auth.getPrincipal();
-        UserEntity user = userRepository.findById(userId)
-                .orElseThrow(() -> new ResponseStatusException(HttpStatus.NOT_FOUND, "用户不存在"));
-
-        TokenService.TokenPair tokens = tokenService.issueTokens(user);
-        return Result.ok(toLoginResponse(user, tokens));
-    }
+    // ── WeChat ────────────────────────────────────────────────────────────
 
     @GetMapping("/wechat/url")
     public Result<String> wechatUrl(@RequestParam String redirectUri) {
-        String url = wechatAuthService.buildAuthUrl(redirectUri);
-        return Result.ok(url);
+        return Result.ok(wechatAuthService.buildAuthUrl(redirectUri));
     }
+
+    // ── Taobao ────────────────────────────────────────────────────────────
+
+    @GetMapping("/taobao/url")
+    public Result<String> taobaoUrl(@RequestParam String redirectUri) {
+        return Result.ok(taobaoAuthService.buildAuthUrl(redirectUri));
+    }
+
+    // ── Phone SMS ─────────────────────────────────────────────────────────
+
+    @PostMapping("/phone/send-code")
+    public Result<String> sendSmsCode(@RequestBody SmsSendRequest req) {
+        smsService.sendCode(req.getPhone());
+        return Result.ok("验证码已发送");
+    }
+
+    // ── Token management ──────────────────────────────────────────────────
 
     @PostMapping("/refresh")
     public Result<LoginResponse> refresh(@RequestBody RefreshRequest req) {
@@ -131,6 +149,8 @@ public class AuthController {
         info.setAvatar(user.getAvatar());
         return Result.ok(info);
     }
+
+    // ── Private helpers ───────────────────────────────────────────────────
 
     private LoginResponse toLoginResponse(UserEntity user, TokenService.TokenPair tokens) {
         LoginResponse resp = new LoginResponse();

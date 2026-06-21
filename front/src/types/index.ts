@@ -7,6 +7,8 @@ export interface NoteSummary {
   status: string;
   createdAt: number;
   updatedAt: number;
+  likeCount?: number;
+  favoriteCount?: number;
 }
 
 export interface CommentItem {
@@ -15,6 +17,7 @@ export interface CommentItem {
   userId: number;
   content: string;
   createdAt: number;
+  likeCount?: number;
 }
 
 export interface NoteDetail {
@@ -28,7 +31,15 @@ export interface NoteDetail {
   status: string;
   createdAt: number;
   updatedAt: number;
+  likeCount?: number;
+  favoriteCount?: number;
   comments: CommentItem[];
+}
+
+export interface ToggleResult {
+  active: boolean;
+  count: number;
+  action: string;
 }
 
 export interface CreateDraftResponse {

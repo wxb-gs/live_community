@@ -96,3 +96,142 @@ export async function addComment(noteId: number, content: string): Promise<Comme
     body: JSON.stringify({ noteId, content }),
   });
 }
+
+export interface UserInfo {
+  userId: number;
+  username: string | null;
+  nickname: string;
+  avatar: string;
+}
+
+export async function fetchMyProfile(): Promise<UserInfo> {
+  return request<UserInfo>('/api/auth/me');
+}
+
+export async function getWechatAuthUrl(redirectUri: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/wechat/url?redirectUri=${encodeURIComponent(redirectUri)}`);
+  const json: ApiResult<string> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '获取微信授权链接失败');
+  return json.data;
+}
+
+export async function getTaobaoAuthUrl(redirectUri: string): Promise<string> {
+  const res = await fetch(`${API_BASE}/api/auth/taobao/url?redirectUri=${encodeURIComponent(redirectUri)}`);
+  const json: ApiResult<string> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '获取淘宝授权链接失败');
+  return json.data;
+}
+
+export async function sendSmsCode(phone: string): Promise<void> {
+  const res = await fetch(`${API_BASE}/api/auth/phone/send-code`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ phone }),
+  });
+  const json: ApiResult<null> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '发送验证码失败');
+}
+
+export interface LoginData {
+  accessToken: string;
+  refreshToken: string;
+  expiresIn: number;
+  user: UserInfo;
+}
+
+export async function passwordLogin(username: string, password: string): Promise<LoginData> {
+  return request<LoginData>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'password', username, password }),
+  });
+}
+
+export async function passwordRegister(username: string, password: string, nickname?: string): Promise<LoginData> {
+  const res = await fetch(`${API_BASE}/api/auth/register`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ username, password, nickname: nickname || username }),
+  });
+  if (res.status === 409) throw new Error('用户名已存在');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { msg?: string }).msg || '注册失败');
+  }
+  const json: ApiResult<LoginData> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '注册失败');
+  return json.data;
+}
+
+export async function wechatLogin(code: string): Promise<LoginData> {
+  const res = await fetch(`${API_BASE}/api/auth/wechat/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ code }),
+  });
+  if (res.status === 401) throw new Error('微信授权已过期，请重新登录');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { msg?: string }).msg || '微信登录失败');
+  }
+  const json: ApiResult<LoginData> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '微信登录失败');
+  return json.data;
+}
+
+export async function taobaoLogin(code: string): Promise<LoginData> {
+  const res = await fetch(`${API_BASE}/api/auth/login`, {
+    method: 'POST',
+    headers: { 'Content-Type': 'application/json' },
+    body: JSON.stringify({ type: 'taobao', code }),
+  });
+  if (res.status === 401) throw new Error('淘宝授权已过期，请重新登录');
+  if (!res.ok) {
+    const err = await res.json().catch(() => ({}));
+    throw new Error((err as { msg?: string }).msg || '淘宝登录失败');
+  }
+  const json: ApiResult<LoginData> = await res.json();
+  if (json.code !== 200) throw new Error(json.msg || '淘宝登录失败');
+  return json.data;
+}
+
+export async function phoneLogin(phone: string, smsCode: string): Promise<LoginData> {
+  return request<LoginData>('/api/auth/login', {
+    method: 'POST',
+    body: JSON.stringify({ type: 'phone', phone, smsCode }),
+  });
+}
+
+export async function toggleInteraction(
+  interactionType: string,
+  targetType: string,
+  targetId: number
+): Promise<{ active: boolean; count: number; action: string }> {
+  return request<{ active: boolean; count: number; action: string }>('/api/interaction/toggle', {
+    method: 'POST',
+    body: JSON.stringify({ interactionType, targetType, targetId }),
+  });
+}
+
+export async function getInteractionStatus(
+  interactionType: string,
+  targetType: string,
+  targetId: number
+): Promise<{ active: boolean; count: number; action: string }> {
+  return request<{ active: boolean; count: number; action: string }>(
+    `/api/interaction/status?interactionType=${interactionType}&targetType=${targetType}&targetId=${targetId}`
+  );
+}
+
+export async function batchInteractionStatus(
+  interactionType: string,
+  targetType: string,
+  targetIds: number[]
+): Promise<{ statuses: Record<number, { active: boolean; count: number }> }> {
+  return request<{ statuses: Record<number, { active: boolean; count: number }> }>(
+    '/api/interaction/batch-status',
+    {
+      method: 'POST',
+      body: JSON.stringify({ interactionType, targetType, targetIds }),
+    }
+  );
+}

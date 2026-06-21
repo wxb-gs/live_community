@@ -1,3 +1,8 @@
-com\example\gateway\GatewayApplication.class
-com\example\gateway\controller\NoteController.class
+com\example\gateway\security\JwtAuthFilter.class
+com\example\gateway\security\JwtAuthenticationToken.class
 com\example\gateway\controller\UploadController.class
+com\example\gateway\config\GatewaySecurityConfig.class
+com\example\gateway\GatewayApplication.class
+com\example\gateway\controller\AuthProxyController.class
+com\example\gateway\controller\AuthProxyController$1.class
+com\example\gateway\controller\NoteController.class

@@ -106,6 +106,31 @@ services:
     networks:
       - live-community
 
+  kafka:
+    image: confluentinc/cp-kafka:7.6.0
+    container_name: kafka
+    ports:
+      - "9092:9092"
+    environment:
+      KAFKA_NODE_ID: 1
+      KAFKA_PROCESS_ROLES: broker,controller
+      KAFKA_LISTENERS: PLAINTEXT://0.0.0.0:9092,CONTROLLER://0.0.0.0:9093
+      KAFKA_ADVERTISED_LISTENERS: PLAINTEXT://kafka:9092
+      KAFKA_CONTROLLER_LISTENER_NAMES: CONTROLLER
+      KAFKA_LISTENER_SECURITY_PROTOCOL_MAP: PLAINTEXT:PLAINTEXT,CONTROLLER:PLAINTEXT
+      KAFKA_CONTROLLER_QUORUM_VOTERS: 1@kafka:9093
+      KAFKA_OFFSETS_TOPIC_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_REPLICATION_FACTOR: 1
+      KAFKA_TRANSACTION_STATE_LOG_MIN_ISR: 1
+      CLUSTER_ID: MkU3OEVBNTcwNTJENDM2Qk
+    healthcheck:
+      test: ["CMD", "kafka-topics", "--bootstrap-server", "kafka:9092", "--list"]
+      interval: 10s
+      timeout: 10s
+      retries: 30
+    networks:
+      - live-community
+
   # ==================== Application Services ====================
 
   leaf-service:
@@ -157,6 +182,11 @@ services:
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
       DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
       SPRING_CASSANDRA_CONTACT-POINTS: cassandra
+      SPRING_CASSANDRA_PORT: "9042"
+      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: "6379"
+      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       nacos:
         condition: service_healthy
@@ -197,7 +227,8 @@ services:
       - "20884:20884"
     environment:
       SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_REDIS_HOST: redis
+      SPRING_DATA_REDIS_HOST: redis
+      SPRING_DATA_REDIS_PORT: 6379
       SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
       DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
       JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production}

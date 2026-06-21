@@ -1,8 +1,6 @@
 package com.example.auth.config;
 
-import com.example.auth.security.DaoAuthenticationProvider;
-import com.example.auth.security.JwtAuthFilter;
-import com.example.auth.security.WechatAuthenticationProvider;
+import com.example.auth.security.*;
 import org.springframework.context.annotation.Bean;
 import org.springframework.context.annotation.Configuration;
 import org.springframework.security.authentication.AuthenticationManager;
@@ -29,14 +27,7 @@ public class AuthSecurityConfig {
             .csrf(csrf -> csrf.disable())
             .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
             .authorizeHttpRequests(auth -> auth
-                .requestMatchers("/api/auth/register",
-                                 "/api/auth/login",
-                                 "/api/auth/wechat/url",
-                                 "/api/auth/wechat/login",
-                                 "/api/auth/refresh").permitAll()
-                .requestMatchers("/api/auth/logout",
-                                 "/api/auth/me").authenticated()
-                .anyRequest().authenticated()
+                .anyRequest().permitAll()
             )
             .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
         return http.build();
@@ -45,7 +36,9 @@ public class AuthSecurityConfig {
     @Bean
     AuthenticationManager authManager(
             DaoAuthenticationProvider daoProvider,
-            WechatAuthenticationProvider wechatProvider) {
-        return new ProviderManager(daoProvider, wechatProvider);
+            WechatAuthenticationProvider wechatProvider,
+            TaobaoAuthenticationProvider taobaoProvider,
+            PhoneSmsAuthenticationProvider phoneSmsProvider) {
+        return new ProviderManager(daoProvider, wechatProvider, taobaoProvider, phoneSmsProvider);
     }
 }

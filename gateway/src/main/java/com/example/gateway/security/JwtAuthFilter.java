@@ -56,7 +56,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
                     .parseSignedClaims(token)
                     .getPayload();
 
-            Long userId = claims.get("sub", Long.class);
+            Long userId = Long.parseLong(claims.get("sub", String.class));
             String username = claims.get("username", String.class);
 
             JwtAuthenticationToken auth = new JwtAuthenticationToken(userId, username);
@@ -64,7 +64,7 @@ public class JwtAuthFilter extends OncePerRequestFilter {
 
             chain.doFilter(request, response);
         } catch (JwtException e) {
-            log.debug("JWT validation failed: {}", e.getMessage());
+            log.warn("JWT validation failed: {}", e.getMessage());
             sendError(response, 401, "Token 无效或已过期");
         }
     }

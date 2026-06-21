@@ -46,7 +46,22 @@ public class CassandraSchemaInitializer {
                 """);
             cqlSession.execute("CREATE INDEX IF NOT EXISTS ON note (user_id)");
             cqlSession.execute("CREATE INDEX IF NOT EXISTS ON note (status)");
-            log.info("Cassandra schema ensured: tables note, comment + indexes");
+            cqlSession.execute("""
+                CREATE TABLE IF NOT EXISTS comment_like (
+                    comment_id BIGINT,
+                    user_id BIGINT,
+                    status TEXT,
+                    created_at BIGINT,
+                    PRIMARY KEY (comment_id, user_id)
+                )
+                """);
+            cqlSession.execute("""
+                CREATE TABLE IF NOT EXISTS comment_like_count (
+                    comment_id BIGINT PRIMARY KEY,
+                    like_count COUNTER
+                )
+                """);
+            log.info("Cassandra schema ensured: tables note, comment, comment_like, comment_like_count + indexes");
         } catch (Exception e) {
             log.warn("Schema init warning: {}", e.getMessage());
         }

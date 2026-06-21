@@ -11,6 +11,7 @@ public class CommentResponse implements Serializable {
     private Long userId;
     private String content;
     private Long createdAt;
+    private Long likeCount;
 
     public CommentResponse() {}
 
@@ -32,4 +33,6 @@ public class CommentResponse implements Serializable {
     public void setContent(String content) { this.content = content; }
     public Long getCreatedAt() { return createdAt; }
     public void setCreatedAt(Long createdAt) { this.createdAt = createdAt; }
+    public Long getLikeCount() { return likeCount; }
+    public void setLikeCount(Long likeCount) { this.likeCount = likeCount; }
 }

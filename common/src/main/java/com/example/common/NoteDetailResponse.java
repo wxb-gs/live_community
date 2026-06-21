@@ -17,6 +17,8 @@ public class NoteDetailResponse implements Serializable {
     private String status;
     private Long createdAt;
     private Long updatedAt;
+    private Long likeCount;
+    private Long favoriteCount;
     private List<CommentResponse> comments;
 
     public NoteDetailResponse() {}
@@ -41,6 +43,10 @@ public class NoteDetailResponse implements Serializable {
     public void setCreatedAt(Long createdAt) { this.createdAt = createdAt; }
     public Long getUpdatedAt() { return updatedAt; }
     public void setUpdatedAt(Long updatedAt) { this.updatedAt = updatedAt; }
+    public Long getLikeCount() { return likeCount; }
+    public void setLikeCount(Long likeCount) { this.likeCount = likeCount; }
+    public Long getFavoriteCount() { return favoriteCount; }
+    public void setFavoriteCount(Long favoriteCount) { this.favoriteCount = favoriteCount; }
     public List<CommentResponse> getComments() { return comments; }
     public void setComments(List<CommentResponse> comments) { this.comments = comments; }
 }
