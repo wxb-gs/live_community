@@ -1,0 +1,56 @@
+# ── Maven ──
+target/
+*.class
+*.jar
+*.war
+*.ear
+*.nar
+dependency-reduced-pom.xml
+!.mvn/wrapper/maven-wrapper.jar
+
+# ── IDE ──
+# IntelliJ IDEA
+.idea/
+*.iml
+*.iws
+*.ipr
+out/
+
+# Eclipse / STS
+.project
+.classpath
+.settings/
+.springBeans
+.factorypath
+bin/
+
+# VS Code
+.vscode/
+*.code-workspace
+
+# ── OS generated ──
+.DS_Store
+.DS_Store?
+._*
+Thumbs.db
+ehthumbs.db
+Desktop.ini
+$RECYCLE.BIN/
+
+# ── Logs ──
+*.log
+logs/
+*.log.*
+
+# ── Environment ──
+.env
+.env.local
+.env.*.local
+
+# ── Misc ──
+*.swp
+*.swo
+*~
+*.bak
+*.tmp
+*.pid

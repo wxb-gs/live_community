@@ -46,3 +46,21 @@ CREATE TABLE IF NOT EXISTS user_phone (
 
 CREATE UNIQUE INDEX idx_user_phone_phone ON user_phone(phone);
 CREATE INDEX idx_user_phone_userid ON user_phone(user_id);
+
+CREATE TABLE IF NOT EXISTS note (
+    id          BIGINT PRIMARY KEY,
+    user_id     BIGINT NOT NULL,
+    title       VARCHAR(256) NOT NULL,
+    content     TEXT,
+    summary     VARCHAR(512),
+    tags        VARCHAR(512) DEFAULT '',
+    category    VARCHAR(64) DEFAULT 'general',
+    view_count  INT DEFAULT 0,
+    like_count  INT DEFAULT 0,
+    status      VARCHAR(16) DEFAULT 'PUBLISHED',
+    created_at  BIGINT NOT NULL,
+    updated_at  BIGINT NOT NULL,
+    INDEX idx_note_user_id (user_id),
+    INDEX idx_note_status (status),
+    INDEX idx_note_created_at (created_at)
+) ENGINE=InnoDB DEFAULT CHARSET=utf8mb4;
