@@ -87,10 +87,11 @@ def cleanup_elasticsearch():
     notes_mapping = {
         "settings": {
             "number_of_shards": 1,
-            "number_of_replicas": 1,
+            "number_of_replicas": 0,
             "analysis": {
                 "analyzer": {
-                    "default": {"type": "standard"}
+                    "ik_max_word": {"type": "custom", "tokenizer": "ik_max_word"},
+                    "ik_smart":   {"type": "custom", "tokenizer": "ik_smart"}
                 }
             }
         },
@@ -100,12 +101,11 @@ def cleanup_elasticsearch():
                 "id": {"type": "long"},
                 "user_id": {"type": "long"},
                 "title": {
-                    "type": "text",
-                    "analyzer": "standard",
+                    "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
                     "fields": {"keyword": {"type": "keyword"}}
                 },
-                "content": {"type": "text", "analyzer": "standard"},
-                "summary": {"type": "text"},
+                "content": {"type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart"},
+                "summary": {"type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart"},
                 "tags": {"type": "text"},
                 "category": {
                     "type": "text",
@@ -132,10 +132,11 @@ def cleanup_elasticsearch():
     users_mapping = {
         "settings": {
             "number_of_shards": 1,
-            "number_of_replicas": 1,
+            "number_of_replicas": 0,
             "analysis": {
                 "analyzer": {
-                    "default": {"type": "standard"}
+                    "ik_max_word": {"type": "custom", "tokenizer": "ik_max_word"},
+                    "ik_smart":   {"type": "custom", "tokenizer": "ik_smart"}
                 }
             }
         },
@@ -143,12 +144,11 @@ def cleanup_elasticsearch():
             "properties": {
                 "id": {"type": "long"},
                 "username": {
-                    "type": "text",
+                    "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
                     "fields": {"keyword": {"type": "keyword"}}
                 },
                 "nickname": {
-                    "type": "text",
-                    "fields": {"suggest": {"type": "completion"}}
+                    "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart"
                 },
                 "avatar": {"type": "keyword"},
                 "status": {"type": "keyword"}

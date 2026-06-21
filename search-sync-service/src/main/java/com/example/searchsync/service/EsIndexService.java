@@ -28,7 +28,11 @@ public class EsIndexService {
         this.esClient = esClient;
     }
 
-    public void indexNote(List<JsonNode> rows) {
+    /**
+     * 索引笔记文档到 ES，使用 PUT 语义（相同 id 覆盖写入，天然幂等）。
+     * @return true 表示全部成功，false 表示有文档写入失败（消息不应 ACK）
+     */
+    public boolean indexNote(List<JsonNode> rows) {
         List<BulkOperation> ops = new ArrayList<>();
         for (JsonNode row : rows) {
             Map<String, Object> doc = EsDocMapper.noteFromMySql(row);
@@ -36,20 +40,20 @@ public class EsIndexService {
             ops.add(BulkOperation.of(b -> b
                 .index(IndexOperation.of(i -> i.index(NOTES_INDEX).id(String.valueOf(id)).document(doc)))));
         }
-        executeBulk(ops, NOTES_INDEX);
+        return executeBulk(ops, NOTES_INDEX);
     }
 
-    public void deleteNote(List<JsonNode> rows) {
+    public boolean deleteNote(List<JsonNode> rows) {
         List<BulkOperation> ops = new ArrayList<>();
         for (JsonNode row : rows) {
             String id = String.valueOf(EsDocMapper.noteFromMySql(row).get("id"));
             ops.add(BulkOperation.of(b -> b
                 .delete(DeleteOperation.of(d -> d.index(NOTES_INDEX).id(id)))));
         }
-        executeBulk(ops, NOTES_INDEX);
+        return executeBulk(ops, NOTES_INDEX);
     }
 
-    public void indexUser(List<JsonNode> rows) {
+    public boolean indexUser(List<JsonNode> rows) {
         List<BulkOperation> ops = new ArrayList<>();
         for (JsonNode row : rows) {
             Map<String, Object> doc = EsDocMapper.userFromMySql(row);
@@ -57,30 +61,35 @@ public class EsIndexService {
             ops.add(BulkOperation.of(b -> b
                 .index(IndexOperation.of(i -> i.index(USERS_INDEX).id(String.valueOf(id)).document(doc)))));
         }
-        executeBulk(ops, USERS_INDEX);
+        return executeBulk(ops, USERS_INDEX);
     }
 
-    public void deleteUser(List<JsonNode> rows) {
+    public boolean deleteUser(List<JsonNode> rows) {
         List<BulkOperation> ops = new ArrayList<>();
         for (JsonNode row : rows) {
             String id = String.valueOf(EsDocMapper.userFromMySql(row).get("id"));
             ops.add(BulkOperation.of(b -> b
                 .delete(DeleteOperation.of(d -> d.index(USERS_INDEX).id(id)))));
         }
-        executeBulk(ops, USERS_INDEX);
+        return executeBulk(ops, USERS_INDEX);
     }
 
-    private void executeBulk(List<BulkOperation> ops, String index) {
-        if (ops.isEmpty()) return;
+    private boolean executeBulk(List<BulkOperation> ops, String index) {
+        if (ops.isEmpty()) return true;
         try {
             BulkResponse response = esClient.bulk(BulkRequest.of(b -> b.operations(ops)));
             if (response.errors()) {
-                response.items().stream()
+                List<String> errors = response.items().stream()
                     .filter(item -> item.error() != null)
-                    .forEach(item -> log.error("Bulk error on [{}]: {}", index, item.error().reason()));
+                    .map(item -> String.format("id=%s reason=%s", item.id(), item.error().reason()))
+                    .toList();
+                log.error("Bulk errors on [{}]: {}", index, String.join("; ", errors));
+                return false;
             }
+            return true;
         } catch (Exception e) {
             log.error("Bulk index failed for [{}]", index, e);
+            return false;
         }
     }
 }

@@ -1,22 +1,36 @@
-import { useState, useCallback } from 'react';
-import { useNavigate } from 'react-router-dom';
+import { useState, useCallback, useRef, useEffect } from 'react';
+import { useNavigate, useLocation } from 'react-router-dom';
 import { searchSuggest } from '../api';
 import type { Suggestion } from '../types';
 
 export default function TopHeader() {
   const navigate = useNavigate();
+  const location = useLocation();
   const [query, setQuery] = useState('');
   const [suggestions, setSuggestions] = useState<Suggestion[]>([]);
   const [showSuggestions, setShowSuggestions] = useState(false);
   const [focused, setFocused] = useState(false);
+  const debounceRef = useRef<ReturnType<typeof setTimeout>>();
+
+  // Sync search input with URL when navigating to /search?q=...
+  useEffect(() => {
+    if (location.pathname === '/search') {
+      const params = new URLSearchParams(location.search);
+      const q = params.get('q');
+      if (q) setQuery(q);
+    }
+  }, [location]);
 
   const handleInputChange = useCallback((value: string) => {
     setQuery(value);
+    if (debounceRef.current) clearTimeout(debounceRef.current);
     if (value.length >= 2) {
-      searchSuggest(value).then((res) => {
-        setSuggestions(res.suggestions);
-        setShowSuggestions(true);
-      });
+      debounceRef.current = setTimeout(() => {
+        searchSuggest(value).then((res) => {
+          setSuggestions(res.suggestions);
+          setShowSuggestions(true);
+        }).catch(() => {});
+      }, 200);
     } else {
       setSuggestions([]);
       setShowSuggestions(false);
@@ -28,6 +42,19 @@ export default function TopHeader() {
     if (!term) return;
     setShowSuggestions(false);
     navigate(`/search?q=${encodeURIComponent(term)}`);
+  };
+
+  const handleSuggestionClick = (s: Suggestion) => {
+    setShowSuggestions(false);
+    setQuery('');
+    setSuggestions([]);
+    if (s.type === 'note' && s.id) {
+      navigate(`/note/${s.id}`);
+    } else if (s.type === 'user' && s.id) {
+      navigate(`/profile?userId=${s.id}`);
+    } else {
+      navigate(`/search?q=${encodeURIComponent(s.text)}`);
+    }
   };
 
   const handleKeyDown = (e: React.KeyboardEvent) => {
@@ -89,18 +116,43 @@ export default function TopHeader() {
           {/* Suggestions */}
           {showSuggestions && suggestions.length > 0 && (
             <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-2xl shadow-xl shadow-black/5 border border-gray-100/60 overflow-hidden z-50 animate-in">
-              {suggestions.map((s, i) => (
-                <button
-                  key={i}
-                  className="w-full flex items-center justify-between px-5 py-3 hover:bg-gray-50 transition-colors text-left"
-                  onMouseDown={() => handleSearch(s.text)}
-                >
-                  <span className="text-[14px] text-text-primary">{s.text}</span>
-                  <span className="text-[11px] text-text-muted bg-gray-100 px-2.5 py-0.5 rounded-full font-medium">
-                    {s.type === 'note' ? '笔记' : '用户'}
-                  </span>
-                </button>
-              ))}
+              {/* Group by type */}
+              {['note', 'user'].map((type) => {
+                const items = suggestions.filter((s) => s.type === type);
+                if (items.length === 0) return null;
+                return (
+                  <div key={type}>
+                    <div className="px-5 py-2 text-[11px] font-semibold text-text-muted/60 uppercase tracking-wide bg-gray-50/50">
+                      {type === 'note' ? '笔记' : '用户'}
+                    </div>
+                    {items.map((s, i) => (
+                      <button
+                        key={`${type}-${i}`}
+                        className="w-full flex items-center gap-3 px-5 py-2.5 hover:bg-gray-50 transition-colors text-left"
+                        onMouseDown={() => handleSuggestionClick(s)}
+                      >
+                        {type === 'note' ? (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-brand flex-shrink-0">
+                            <path d="M14 2H6a2 2 0 0 0-2 2v16a2 2 0 0 0 2 2h12a2 2 0 0 0 2-2V8Z" />
+                            <path d="M14 2v6h6M16 13H8M16 17H8M10 9H8" />
+                          </svg>
+                        ) : (
+                          <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round" className="text-text-muted flex-shrink-0">
+                            <path d="M20 21v-2a4 4 0 0 0-4-4H8a4 4 0 0 0-4 4v2" />
+                            <circle cx="12" cy="7" r="4" />
+                          </svg>
+                        )}
+                        <span className="text-[14px] text-text-primary truncate">{s.text}</span>
+                        <span className={`text-[10px] px-1.5 py-0.5 rounded-full font-medium ml-auto flex-shrink-0 ${
+                          type === 'note' ? 'bg-brand-light text-brand' : 'bg-gray-100 text-text-muted'
+                        }`}>
+                          {type === 'note' ? '笔记' : '用户'}
+                        </span>
+                      </button>
+                    ))}
+                  </div>
+                );
+              })}
             </div>
           )}
         </div>

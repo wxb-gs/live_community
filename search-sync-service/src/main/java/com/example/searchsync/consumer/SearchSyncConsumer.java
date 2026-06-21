@@ -5,6 +5,7 @@ import com.example.searchsync.service.EsIndexService;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
+import org.springframework.kafka.support.Acknowledgment;
 import org.springframework.stereotype.Component;
 
 @Component
@@ -19,32 +20,38 @@ public class SearchSyncConsumer {
     }
 
     @KafkaListener(topics = "search_sync", groupId = "search-sync-group")
-    public void onMessage(String message) {
+    public void onMessage(String message, Acknowledgment ack) {
         try {
             CanalMessage msg = CanalMessage.fromJson(message);
-            log.debug("Received: table={}, type={}, rows={}", msg.getTable(), msg.getType(),
-                msg.getData() != null ? msg.getData().size() : 0);
+            if (msg.getData() == null || msg.getData().isEmpty()) {
+                ack.acknowledge();
+                return;
+            }
 
-            switch (msg.getTable()) {
-                case "note":
-                    if ("DELETE".equals(msg.getType())) {
-                        esIndexService.deleteNote(msg.getData());
-                    } else {
-                        esIndexService.indexNote(msg.getData());
-                    }
-                    break;
-                case "user_info":
-                    if ("DELETE".equals(msg.getType())) {
-                        esIndexService.deleteUser(msg.getData());
-                    } else {
-                        esIndexService.indexUser(msg.getData());
-                    }
-                    break;
-                default:
+            log.debug("Received: table={}, type={}, rows={}", msg.getTable(), msg.getType(), msg.getData().size());
+
+            boolean ok = switch (msg.getTable()) {
+                case "note" -> "DELETE".equals(msg.getType())
+                    ? esIndexService.deleteNote(msg.getData())
+                    : esIndexService.indexNote(msg.getData());
+                case "user_info" -> "DELETE".equals(msg.getType())
+                    ? esIndexService.deleteUser(msg.getData())
+                    : esIndexService.indexUser(msg.getData());
+                default -> {
                     log.warn("Unknown table: {}", msg.getTable());
+                    yield true;
+                }
+            };
+
+            if (ok) {
+                ack.acknowledge();
+            } else {
+                // 不 ack，消息会被重新投递；ES upsert 天然幂等
+                log.warn("Sync failed, will retry: table={}, type={}", msg.getTable(), msg.getType());
             }
         } catch (Exception e) {
-            log.error("Failed to process sync message", e);
+            log.error("Failed to process sync message, will retry", e);
+            // 不 ack，触发重试
         }
     }
 }

@@ -53,6 +53,12 @@ public class NoteMysqlRepository {
             ROW_MAPPER, limit);
     }
 
+    public List<NoteRow> findByUserId(long userId, int offset, int limit) {
+        return jdbc.query(
+            "SELECT * FROM note WHERE user_id = ? AND status = 'PUBLISHED' ORDER BY created_at DESC LIMIT ? OFFSET ?",
+            ROW_MAPPER, userId, limit, offset);
+    }
+
     // ── Write ──
 
     private static final String UPSERT_SQL =

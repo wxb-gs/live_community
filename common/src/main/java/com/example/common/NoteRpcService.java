@@ -13,4 +13,6 @@ public interface NoteRpcService {
     CommentResponse addComment(CommentRequest request);
 
     List<NoteDetailResponse> listPublishedNotes(int page, int size);
+
+    List<NoteDetailResponse> listUserNotes(long userId, int page, int size);
 }

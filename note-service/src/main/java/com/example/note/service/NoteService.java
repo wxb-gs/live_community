@@ -211,6 +211,47 @@ public class NoteService {
                 entity.getUserId(), entity.getContent(), entity.getCreatedAt());
     }
 
+    public List<NoteDetailResponse> listUserNotes(long userId, int page, int size) {
+        int offset = page * size;
+        List<NoteRow> rows = noteMysqlRepository.findByUserId(userId, offset, size);
+        List<NoteDetailResponse> responses = rows.stream()
+                .map(row -> {
+                    NoteDetailResponse resp = toDetailResponse(row);
+                    if (row.getObjectKey() != null && !row.getObjectKey().isEmpty()) {
+                        try {
+                            String coverUrl = minioClient.getPresignedObjectUrl(
+                                    io.minio.GetPresignedObjectUrlArgs.builder()
+                                            .method(io.minio.http.Method.GET)
+                                            .bucket(bucket)
+                                            .object(row.getObjectKey())
+                                            .expiry(24, TimeUnit.HOURS)
+                                            .build());
+                            resp.setCoverUrl(coverUrl);
+                        } catch (Exception e) {
+                            log.warn("Failed to generate cover URL for noteId={}", row.getId(), e);
+                        }
+                    }
+                    return resp;
+                })
+                .collect(Collectors.toList());
+
+        if (!responses.isEmpty()) {
+            List<Long> noteIds = responses.stream().map(NoteDetailResponse::getNoteId).toList();
+            Map<Long, InteractionService.StatusResult> likes =
+                    interactionService.batchStatus(InteractionType.LIKE, "note", noteIds, 0L);
+            Map<Long, InteractionService.StatusResult> favs =
+                    interactionService.batchStatus(InteractionType.FAVORITE, "note", noteIds, 0L);
+            responses.forEach(r -> {
+                InteractionService.StatusResult lr = likes.get(r.getNoteId());
+                if (lr != null) r.setLikeCount(lr.count());
+                InteractionService.StatusResult fr = favs.get(r.getNoteId());
+                if (fr != null) r.setFavoriteCount(fr.count());
+            });
+        }
+
+        return responses;
+    }
+
     public List<NoteDetailResponse> listPublishedNotes(int page, int size) {
         List<NoteRow> rows = noteMysqlRepository.findPublished(size);
         List<NoteDetailResponse> responses = rows.stream()

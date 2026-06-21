@@ -60,4 +60,13 @@ public class NoteController {
         List<NoteDetailResponse> list = noteRpcService.listPublishedNotes(page, size);
         return Result.ok(list);
     }
+
+    @GetMapping("/my")
+    public Result<List<NoteDetailResponse>> listMyNotes(
+            @AuthenticationPrincipal Long userId,
+            @RequestParam(defaultValue = "0") int page,
+            @RequestParam(defaultValue = "20") int size) {
+        List<NoteDetailResponse> list = noteRpcService.listUserNotes(userId, page, size);
+        return Result.ok(list);
+    }
 }

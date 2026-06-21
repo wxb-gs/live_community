@@ -38,4 +38,9 @@ public class NoteRpcServiceImpl implements NoteRpcService {
     public List<NoteDetailResponse> listPublishedNotes(int page, int size) {
         return noteService.listPublishedNotes(page, size);
     }
+
+    @Override
+    public List<NoteDetailResponse> listUserNotes(long userId, int page, int size) {
+        return noteService.listUserNotes(userId, page, size);
+    }
 }

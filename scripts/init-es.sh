@@ -1,7 +1,7 @@
 #!/bin/bash
 # ============================================================
-# Initialize Elasticsearch indices with IK mappings
-# Must be run AFTER ES is healthy and AFTER IK plugin installed
+# Initialize Elasticsearch indices with IK analyzer
+# Requires: IK plugin installed on ES
 # ============================================================
 set -e
 
@@ -13,6 +13,8 @@ echo "=== Creating ES indices ==="
 echo "Creating 'notes' index..."
 curl -sf -X PUT "$ES_URL/notes" -H 'Content-Type: application/json' -d '{
   "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
     "analysis": {
       "analyzer": {
         "ik_max_word": { "type": "custom", "tokenizer": "ik_max_word" },
@@ -22,20 +24,28 @@ curl -sf -X PUT "$ES_URL/notes" -H 'Content-Type: application/json' -d '{
   },
   "mappings": {
     "properties": {
-      "id":         { "type": "long" },
-      "user_id":    { "type": "long" },
+      "id":             { "type": "long" },
+      "user_id":        { "type": "long" },
       "title": {
         "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
-        "fields": { "suggest": { "type": "completion" } }
+        "fields": { "keyword": { "type": "keyword" } }
       },
-      "content":    { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart" },
-      "summary":    { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart" },
-      "tags":       { "type": "keyword" },
-      "category":   { "type": "keyword" },
-      "view_count": { "type": "integer" },
-      "like_count": { "type": "integer" },
-      "status":     { "type": "keyword" },
-      "created_at": { "type": "date" }
+      "content":        { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart" },
+      "summary":        { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart" },
+      "tags":           { "type": "text" },
+      "category": {
+        "type": "text",
+        "fields": { "keyword": { "type": "keyword" } }
+      },
+      "status": {
+        "type": "text",
+        "fields": { "keyword": { "type": "keyword" } }
+      },
+      "cover_url":      { "type": "keyword" },
+      "view_count":     { "type": "long" },
+      "like_count":     { "type": "long" },
+      "favorite_count": { "type": "long" },
+      "created_at":     { "type": "date" }
     }
   }
 }' | tee /dev/null
@@ -45,6 +55,8 @@ echo ""
 echo "Creating 'users' index..."
 curl -sf -X PUT "$ES_URL/users" -H 'Content-Type: application/json' -d '{
   "settings": {
+    "number_of_shards": 1,
+    "number_of_replicas": 0,
     "analysis": {
       "analyzer": {
         "ik_max_word": { "type": "custom", "tokenizer": "ik_max_word" },
@@ -57,12 +69,9 @@ curl -sf -X PUT "$ES_URL/users" -H 'Content-Type: application/json' -d '{
       "id": { "type": "long" },
       "username": {
         "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
-        "fields": { "keyword": { "type": "keyword" }, "suggest": { "type": "completion" } }
+        "fields": { "keyword": { "type": "keyword" } }
       },
-      "nickname": {
-        "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart",
-        "fields": { "suggest": { "type": "completion" } }
-      },
+      "nickname": { "type": "text", "analyzer": "ik_max_word", "search_analyzer": "ik_smart" },
       "avatar":  { "type": "keyword" },
       "status":  { "type": "keyword" }
     }

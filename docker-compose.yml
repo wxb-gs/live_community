@@ -152,7 +152,10 @@ services:
   # ==================== Search Infrastructure ====================
 
   elasticsearch:
-    image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
+    build:
+      context: .
+      dockerfile: Dockerfile.es
+    image: live-community/elasticsearch-ik:8.12.0
     container_name: elasticsearch
     environment:
       discovery.type: single-node
@@ -173,6 +176,9 @@ services:
     container_name: canal-server
     ports:
       - "11111:11111"
+    volumes:
+      - ./scripts/canal.properties:/home/admin/canal-server/conf/canal.properties:ro
+      - ./scripts/canal-instance.properties:/home/admin/canal-server/conf/example/instance.properties:ro
     environment:
       CANAL_ADDRESS: canal-server
       CANAL_PORT: 11111
