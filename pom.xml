@@ -18,6 +18,7 @@
         <module>note-service</module>
         <module>auth-service</module>
         <module>search-sync-service</module>
+        <module>search-service</module>
     </modules>
 
     <properties>

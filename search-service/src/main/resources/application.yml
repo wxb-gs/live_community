@@ -1,0 +1,25 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: search-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:8848
+        enabled: true
+
+dubbo:
+  application:
+    name: search-service
+    qos-enable: false
+  registry:
+    address: nacos://${NACOS_HOST:localhost}:8848
+  protocol:
+    name: tri
+    port: 20886
+
+elasticsearch:
+  host: ${ES_HOST:localhost}
+  port: ${ES_PORT:9200}
