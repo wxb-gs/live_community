@@ -58,3 +58,46 @@ export interface ApiResult<T> {
   msg: string;
   data: T;
 }
+
+export interface NoteSearchResult {
+  id: number;
+  userId: number;
+  title: string;
+  summary: string;
+  tags: string;
+  category: string;
+  viewCount: number;
+  likeCount: number;
+  createdAt: number;
+}
+
+export interface NoteSearchResponse {
+  total: number;
+  page: number;
+  size: number;
+  results: NoteSearchResult[];
+}
+
+export interface UserSearchResult {
+  id: number;
+  username: string;
+  nickname: string;
+  avatar: string;
+}
+
+export interface UserSearchResponse {
+  total: number;
+  page: number;
+  size: number;
+  results: UserSearchResult[];
+}
+
+export interface Suggestion {
+  text: string;
+  type: 'note' | 'user';
+  id: number;
+}
+
+export interface SuggestResponse {
+  suggestions: Suggestion[];
+}

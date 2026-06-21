@@ -3,6 +3,7 @@ import TabBar from './components/TabBar';
 import FeedPage from './pages/FeedPage';
 import NoteDetailPage from './pages/NoteDetailPage';
 import PublishPage from './pages/PublishPage';
+import SearchPage from './pages/SearchPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import WechatCallbackPage from './pages/WechatCallbackPage';
@@ -51,6 +52,7 @@ export default function App() {
           <Route path="/" element={<FeedPage />} />
           <Route path="/note/:noteId" element={<NoteDetailPage />} />
           <Route path="/publish" element={<PublishPage />} />
+          <Route path="/search" element={<SearchPage />} />
           <Route path="/profile" element={<ProfilePage />} />
           <Route
             path="/messages"

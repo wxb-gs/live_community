@@ -7,6 +7,9 @@ import type {
   CreateDraftResponse,
   PresignedUrlResponse,
   ApiResult,
+  NoteSearchResponse,
+  UserSearchResponse,
+  SuggestResponse,
 } from '../types';
 
 async function request<T>(path: string, options?: RequestInit): Promise<T> {
@@ -234,4 +237,36 @@ export async function batchInteractionStatus(
       body: JSON.stringify({ interactionType, targetType, targetIds }),
     }
   );
+}
+
+export async function searchNotes(params: {
+  q: string;
+  page?: number;
+  size?: number;
+  category?: string;
+  sort?: string;
+}): Promise<NoteSearchResponse> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('q', params.q);
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.size) searchParams.set('size', String(params.size));
+  if (params.category) searchParams.set('category', params.category);
+  if (params.sort) searchParams.set('sort', params.sort);
+  return request<NoteSearchResponse>(`/api/search/note?${searchParams.toString()}`);
+}
+
+export async function searchUsers(params: {
+  q: string;
+  page?: number;
+  size?: number;
+}): Promise<UserSearchResponse> {
+  const searchParams = new URLSearchParams();
+  searchParams.set('q', params.q);
+  if (params.page) searchParams.set('page', String(params.page));
+  if (params.size) searchParams.set('size', String(params.size));
+  return request<UserSearchResponse>(`/api/search/user?${searchParams.toString()}`);
+}
+
+export async function searchSuggest(q: string): Promise<SuggestResponse> {
+  return request<SuggestResponse>(`/api/search/suggest?q=${encodeURIComponent(q)}`);
 }
