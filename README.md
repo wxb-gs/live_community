@@ -1,18 +1,11 @@
 # live-community
 
 高并发生活分享社区 — 笔记发布、点赞收藏、评论互动、全文搜索，基于 Spring Cloud Alibaba 微服务架构。
+![about](./assets/imgs/image.png)
 
+## 架构 
+![架构图](./assets/imgs/架构功能图.png)
 
-
-
-## 功能
-
-| | |
-|--|--|
-| ![登录](./assets/imgs/登录.png)<br>**登录/注册** — 账号密码、手机验证码、微信 OAuth、淘宝 OAuth | ![主页](./assets/imgs/homepage.png)<br>**Feed 流首页** — 分类 Tab + 瀑布流无限滚动笔记卡片 |
-| ![评论区](./assets/imgs/评论区.png)<br>**笔记详情** — 图文详情 + 点赞/收藏 + 评论区 | ![发布笔记](./assets/imgs/发布笔记.png)<br>**发布笔记** — 标题 + 内容 + 封面图上传，存草稿或发布 |
-| ![个人页](./assets/imgs/个人页.png)<br>**个人主页** — 用户信息 + 笔记 Tab（我的/收藏/点赞），支持编辑资料 |![个人页](./assets/imgs/个人页.png)<br> **关注页** — 关注用户的笔记 Feed，瀑布流无限滚动 <br>|
-| ![关键词搜索](./assets/imgs/搜索.png)<br>**关键词搜索** —  按照笔记的点赞数 + 浏览数 + 评论数等计算 |![联想](./assets/imgs/联想.png)<br> **联想功能** — 输入实时联想前缀匹配 <br>|
 
 ## 技术栈
 
@@ -31,9 +24,18 @@
 | 安全 | Spring Security + JWT 双 Token (access 15min / refresh 7d) |
 | 前端 | React 18 + TypeScript + Tailwind CSS + Vite |
 
-## 架构与实现要点
+## 功能
 
-![架构图](./assets/imgs/架构功能图.png)
+| | |
+|--|--|
+| ![登录](./assets/imgs/登录.png)<br>**登录/注册** — 账号密码、手机验证码、微信 OAuth、淘宝 OAuth | ![主页](./assets/imgs/homepage.png)<br>**Feed 流首页** — 分类 Tab + 瀑布流无限滚动笔记卡片 |
+| ![评论区](./assets/imgs/评论区.png)<br>**笔记详情** — 图文详情 + 点赞/收藏 + 评论区 | ![发布笔记](./assets/imgs/发布笔记.png)<br>**发布笔记** — 标题 + 内容 + 封面图上传，存草稿或发布 |
+| ![个人页](./assets/imgs/个人页.png)<br>**个人主页** — 用户信息 + 笔记 Tab（我的/收藏/点赞），支持编辑资料 |![个人页](./assets/imgs/个人页.png)<br> **关注页** — 关注用户的笔记 Feed，瀑布流无限滚动 <br>|
+| ![关键词搜索](./assets/imgs/搜索.png)<br>**关键词搜索** —  按照笔记的点赞数 + 浏览数 + 评论数等计算 |![联想](./assets/imgs/联想.png)<br> **联想功能** — 输入实时联想前缀匹配 <br>|
+
+
+
+## 架构与实现要点
 
 ### Gateway — 统一入口
 
