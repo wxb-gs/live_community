@@ -3,6 +3,7 @@ package com.example.note.service;
 import com.example.common.InteractionEvent;
 import com.example.note.config.KafkaTopicConfig;
 import com.example.note.repository.InteractionRecordMysqlRepository;
+import com.example.note.repository.NoteMysqlRepository;
 import org.slf4j.Logger;
 import org.slf4j.LoggerFactory;
 import org.springframework.kafka.annotation.KafkaListener;
@@ -27,12 +28,15 @@ public class InteractionEventConsumer {
     private static final Logger log = LoggerFactory.getLogger(InteractionEventConsumer.class);
 
     private final InteractionRecordMysqlRepository mysqlRepo;
+    private final NoteMysqlRepository noteMysqlRepo;
 
     /** 窗口缓冲区: key = "targetType:targetId:interactionType:userId" */
     private final ConcurrentHashMap<String, InteractionEvent> buffer = new ConcurrentHashMap<>();
 
-    public InteractionEventConsumer(InteractionRecordMysqlRepository mysqlRepo) {
+    public InteractionEventConsumer(InteractionRecordMysqlRepository mysqlRepo,
+                                     NoteMysqlRepository noteMysqlRepo) {
         this.mysqlRepo = mysqlRepo;
+        this.noteMysqlRepo = noteMysqlRepo;
     }
 
     @KafkaListener(topics = KafkaTopicConfig.TOPIC_INTERACTION, groupId = "note-interaction-consumer")
@@ -66,6 +70,17 @@ public class InteractionEventConsumer {
         try {
             mysqlRepo.batchUpsert(batchArgs);
             log.info("Flushed {} interaction events from Kafka window to MySQL", batchArgs.size());
+
+            // Sync like_count to MySQL note table for LIKE/UNLIKE events
+            for (InteractionEvent e : snapshot.values()) {
+                if ("LIKE".equalsIgnoreCase(e.getInteractionType())) {
+                    try {
+                        noteMysqlRepo.addLikeCount(e.getTargetId(), e.isActive() ? 1 : -1);
+                    } catch (Exception ex) {
+                        log.error("Failed to sync like_count for noteId={}", e.getTargetId(), ex);
+                    }
+                }
+            }
         } catch (Exception ex) {
             log.error("Failed to flush {} events to MySQL, re-queuing", batchArgs.size(), ex);
             // 失败时放回缓冲区，下次重试
