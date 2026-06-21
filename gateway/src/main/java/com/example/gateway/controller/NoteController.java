@@ -3,6 +3,7 @@ package com.example.gateway.controller;
 import com.example.common.*;
 import java.util.List;
 import org.apache.dubbo.config.annotation.DubboReference;
+import org.springframework.data.redis.core.StringRedisTemplate;
 import org.springframework.security.core.annotation.AuthenticationPrincipal;
 import org.springframework.web.bind.annotation.*;
 
@@ -12,6 +13,12 @@ public class NoteController {
 
     @DubboReference(check = false)
     private NoteRpcService noteRpcService;
+
+    private final StringRedisTemplate redisTemplate;
+
+    public NoteController(StringRedisTemplate redisTemplate) {
+        this.redisTemplate = redisTemplate;
+    }
 
     @PostMapping("/draft")
     public Result<CreateDraftResponse> createDraft(@AuthenticationPrincipal Long userId,
@@ -30,6 +37,11 @@ public class NoteController {
     @GetMapping("/detail")
     public Result<NoteDetailResponse> getNoteDetail(@RequestParam("noteId") Long noteId) {
         NoteDetailResponse resp = noteRpcService.getNoteDetail(noteId);
+        try {
+            redisTemplate.opsForValue().increment("note:view:" + noteId);
+        } catch (Exception ignored) {
+            // non-blocking: view count is best-effort
+        }
         return Result.ok(resp);
     }
 

@@ -4,6 +4,9 @@ server:
 spring:
   application:
     name: gateway
+  redis:
+    host: ${REDIS_HOST:localhost}
+    port: ${REDIS_PORT:6379}
 
 dubbo:
   application:
