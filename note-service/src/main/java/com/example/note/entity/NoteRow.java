@@ -1,40 +1,22 @@
 package com.example.note.entity;
 
-import org.springframework.data.cassandra.core.mapping.Column;
-import org.springframework.data.cassandra.core.mapping.PrimaryKey;
-import org.springframework.data.cassandra.core.mapping.Table;
+public class NoteRow {
 
-@Table("note")
-public class NoteEntity {
-
-    @PrimaryKey
     private Long id;
-
-    @Column("user_id")
     private Long userId;
-
-    @Column("title")
     private String title;
-
-    @Column("content")
     private String content;
-
-    @Column("summary")
     private String summary;
-
-    @Column("object_key")
+    private String tags;
+    private String category;
     private String objectKey;
-
-    @Column("status")
+    private int viewCount;
+    private int likeCount;
     private String status;
+    private long createdAt;
+    private long updatedAt;
 
-    @Column("created_at")
-    private Long createdAt;
-
-    @Column("updated_at")
-    private Long updatedAt;
-
-    public NoteEntity() {}
+    public NoteRow() {}
 
     public Long getId() { return id; }
     public void setId(Long id) { this.id = id; }
@@ -46,12 +28,20 @@ public class NoteEntity {
     public void setContent(String content) { this.content = content; }
     public String getSummary() { return summary; }
     public void setSummary(String summary) { this.summary = summary; }
+    public String getTags() { return tags; }
+    public void setTags(String tags) { this.tags = tags; }
+    public String getCategory() { return category; }
+    public void setCategory(String category) { this.category = category; }
     public String getObjectKey() { return objectKey; }
     public void setObjectKey(String objectKey) { this.objectKey = objectKey; }
+    public int getViewCount() { return viewCount; }
+    public void setViewCount(int viewCount) { this.viewCount = viewCount; }
+    public int getLikeCount() { return likeCount; }
+    public void setLikeCount(int likeCount) { this.likeCount = likeCount; }
     public String getStatus() { return status; }
     public void setStatus(String status) { this.status = status; }
-    public Long getCreatedAt() { return createdAt; }
-    public void setCreatedAt(Long createdAt) { this.createdAt = createdAt; }
-    public Long getUpdatedAt() { return updatedAt; }
-    public void setUpdatedAt(Long updatedAt) { this.updatedAt = updatedAt; }
+    public long getCreatedAt() { return createdAt; }
+    public void setCreatedAt(long createdAt) { this.createdAt = createdAt; }
+    public long getUpdatedAt() { return updatedAt; }
+    public void setUpdatedAt(long updatedAt) { this.updatedAt = updatedAt; }
 }

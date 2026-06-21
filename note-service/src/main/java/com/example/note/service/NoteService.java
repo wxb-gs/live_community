@@ -2,10 +2,9 @@ package com.example.note.service;
 
 import com.example.common.*;
 import com.example.note.entity.CommentEntity;
-import com.example.note.entity.NoteEntity;
+import com.example.note.entity.NoteRow;
 import com.example.note.repository.CommentRepository;
 import com.example.note.repository.NoteMysqlRepository;
-import com.example.note.repository.NoteRepository;
 import io.minio.MinioClient;
 import io.minio.http.Method;
 import org.apache.dubbo.config.annotation.DubboReference;
@@ -27,12 +26,12 @@ public class NoteService {
 
     private static final Logger log = LoggerFactory.getLogger(NoteService.class);
 
-    private final NoteRepository noteRepository;
+    private final NoteMysqlRepository noteMysqlRepository;
     private final CommentRepository commentRepository;
     private final MinioClient minioClient;
     private final InteractionService interactionService;
     private final CommentLikeService commentLikeService;
-    private final NoteMysqlRepository noteMysqlRepository;
+    private final NoteSyncProducer noteSyncProducer;
 
     @Value("${minio.bucket}")
     private String bucket;
@@ -40,16 +39,16 @@ public class NoteService {
     @DubboReference(check = false)
     private LeafRpcService leafRpcService;
 
-    public NoteService(NoteRepository noteRepository, CommentRepository commentRepository,
+    public NoteService(NoteMysqlRepository noteMysqlRepository, CommentRepository commentRepository,
                        MinioClient minioClient, InteractionService interactionService,
                        CommentLikeService commentLikeService,
-                       NoteMysqlRepository noteMysqlRepository) {
-        this.noteRepository = noteRepository;
+                       NoteSyncProducer noteSyncProducer) {
+        this.noteMysqlRepository = noteMysqlRepository;
         this.commentRepository = commentRepository;
         this.minioClient = minioClient;
         this.interactionService = interactionService;
         this.commentLikeService = commentLikeService;
-        this.noteMysqlRepository = noteMysqlRepository;
+        this.noteSyncProducer = noteSyncProducer;
     }
 
     public CreateDraftResponse createDraft(CreateDraftRequest request) {
@@ -57,35 +56,28 @@ public class NoteService {
         long noteId = idResp.getId();
         long now = System.currentTimeMillis();
 
-        NoteEntity entity = new NoteEntity();
-        entity.setId(noteId);
-        entity.setUserId(request.getUserId());
-        entity.setTitle(request.getTitle());
-        entity.setContent(request.getContent());
-        entity.setSummary(extractSummary(request.getContent()));
-        entity.setStatus("DRAFT");
-        entity.setCreatedAt(now);
-        entity.setUpdatedAt(now);
-
-        noteRepository.save(entity);
         noteMysqlRepository.upsert(
-            entity.getId(), entity.getUserId(), entity.getTitle(), entity.getContent(),
-            entity.getSummary(), null, null,
-            entity.getStatus(), entity.getCreatedAt(), entity.getUpdatedAt()
+            noteId, request.getUserId(), request.getTitle(), request.getContent(),
+            extractSummary(request.getContent()), null, null, null,
+            "DRAFT", now, now
         );
         log.info("Draft created: noteId={}, userId={}", noteId, request.getUserId());
+
+        noteMysqlRepository.findById(noteId)
+                .ifPresent(noteSyncProducer::sendInsertOrUpdate);
+
         return new CreateDraftResponse(noteId, "DRAFT");
     }
 
     public NoteDetailResponse publishNote(PublishNoteRequest request) {
-        NoteEntity entity = noteRepository.findById(request.getNoteId())
+        NoteRow row = noteMysqlRepository.findById(request.getNoteId())
                 .orElseThrow(() -> new RuntimeException("Note not found: " + request.getNoteId()));
 
-        if (!"DRAFT".equals(entity.getStatus())) {
-            throw new RuntimeException("Note is not in DRAFT status: " + entity.getStatus());
+        if (!"DRAFT".equals(row.getStatus())) {
+            throw new RuntimeException("Note is not in DRAFT status: " + row.getStatus());
         }
 
-        String objectKey = generateObjectKey(entity.getId(), request.getFileName());
+        String objectKey = generateObjectKey(row.getId(), request.getFileName());
         try {
             String uploadUrl = minioClient.getPresignedObjectUrl(
                     io.minio.GetPresignedObjectUrlArgs.builder()
@@ -96,32 +88,31 @@ public class NoteService {
                             .build()
             );
 
-            entity.setObjectKey(objectKey);
-            entity.setStatus("PUBLISHED");
-            entity.setUpdatedAt(System.currentTimeMillis());
-            noteRepository.save(entity);
-
+            long now = System.currentTimeMillis();
             noteMysqlRepository.upsert(
-                entity.getId(), entity.getUserId(), entity.getTitle(), entity.getContent(),
-                entity.getSummary(), null, null,
-                entity.getStatus(), entity.getCreatedAt(), entity.getUpdatedAt()
+                row.getId(), row.getUserId(), row.getTitle(), row.getContent(),
+                row.getSummary(), row.getTags(), row.getCategory(), objectKey,
+                "PUBLISHED", row.getCreatedAt(), now
             );
 
-            log.info("Note published: noteId={}, objectKey={}", entity.getId(), objectKey);
+            log.info("Note published: noteId={}, objectKey={}", row.getId(), objectKey);
 
-            NoteDetailResponse resp = toDetailResponse(entity);
+            noteMysqlRepository.findById(row.getId())
+                    .ifPresent(noteSyncProducer::sendInsertOrUpdate);
+
+            NoteDetailResponse resp = toDetailResponse(row);
             resp.setUploadUrl(uploadUrl);
             resp.setComments(Collections.emptyList());
             return resp;
         } catch (Exception e) {
-            log.error("Failed to generate presigned URL for noteId={}", entity.getId(), e);
+            log.error("Failed to generate presigned URL for noteId={}", row.getId(), e);
             throw new RuntimeException("Failed to publish note", e);
         }
     }
 
     public NoteDetailResponse getNoteDetail(Long noteId) {
-        CompletableFuture<NoteEntity> noteFuture = CompletableFuture.supplyAsync(() ->
-                noteRepository.findById(noteId)
+        CompletableFuture<NoteRow> noteFuture = CompletableFuture.supplyAsync(() ->
+                noteMysqlRepository.findById(noteId)
                         .orElseThrow(() -> new RuntimeException("Note not found: " + noteId))
         );
 
@@ -134,17 +125,17 @@ public class NoteService {
             }
         });
 
-        NoteEntity note = noteFuture.join();
+        NoteRow row = noteFuture.join();
         List<CommentEntity> commentEntities = commentsFuture.join();
 
-        NoteDetailResponse resp = toDetailResponse(note);
-        if (note.getObjectKey() != null && !note.getObjectKey().isEmpty()) {
+        NoteDetailResponse resp = toDetailResponse(row);
+        if (row.getObjectKey() != null && !row.getObjectKey().isEmpty()) {
             try {
                 String coverUrl = minioClient.getPresignedObjectUrl(
                         io.minio.GetPresignedObjectUrlArgs.builder()
                                 .method(io.minio.http.Method.GET)
                                 .bucket(bucket)
-                                .object(note.getObjectKey())
+                                .object(row.getObjectKey())
                                 .expiry(24, TimeUnit.HOURS)
                                 .build());
                 resp.setUploadUrl(coverUrl);
@@ -156,11 +147,9 @@ public class NoteService {
                 .map(this::toCommentResponse)
                 .collect(Collectors.toList()));
 
-        // Populate interaction counts
         resp.setLikeCount(interactionService.getCount(InteractionType.LIKE, "note", noteId));
         resp.setFavoriteCount(interactionService.getCount(InteractionType.FAVORITE, "note", noteId));
 
-        // Populate like counts for comments (from Cassandra via CommentLikeService)
         if (!resp.getComments().isEmpty()) {
             List<Long> commentIds = resp.getComments().stream()
                     .map(CommentResponse::getCommentId).toList();
@@ -203,17 +192,17 @@ public class NoteService {
         return content.length() > 200 ? content.substring(0, 200) + "..." : content;
     }
 
-    private NoteDetailResponse toDetailResponse(NoteEntity entity) {
+    private NoteDetailResponse toDetailResponse(NoteRow row) {
         NoteDetailResponse resp = new NoteDetailResponse();
-        resp.setNoteId(entity.getId());
-        resp.setUserId(entity.getUserId());
-        resp.setTitle(entity.getTitle());
-        resp.setContent(entity.getContent());
-        resp.setSummary(entity.getSummary());
-        resp.setObjectKey(entity.getObjectKey());
-        resp.setStatus(entity.getStatus());
-        resp.setCreatedAt(entity.getCreatedAt());
-        resp.setUpdatedAt(entity.getUpdatedAt());
+        resp.setNoteId(row.getId());
+        resp.setUserId(row.getUserId());
+        resp.setTitle(row.getTitle());
+        resp.setContent(row.getContent());
+        resp.setSummary(row.getSummary());
+        resp.setObjectKey(row.getObjectKey());
+        resp.setStatus(row.getStatus());
+        resp.setCreatedAt(row.getCreatedAt());
+        resp.setUpdatedAt(row.getUpdatedAt());
         return resp;
     }
 
@@ -223,29 +212,28 @@ public class NoteService {
     }
 
     public List<NoteDetailResponse> listPublishedNotes(int page, int size) {
-        List<NoteEntity> entities = noteRepository.findPublished(size);
-        List<NoteDetailResponse> responses = entities.stream()
-                .map(entity -> {
-                    NoteDetailResponse resp = toDetailResponse(entity);
-                    if (entity.getObjectKey() != null && !entity.getObjectKey().isEmpty()) {
+        List<NoteRow> rows = noteMysqlRepository.findPublished(size);
+        List<NoteDetailResponse> responses = rows.stream()
+                .map(row -> {
+                    NoteDetailResponse resp = toDetailResponse(row);
+                    if (row.getObjectKey() != null && !row.getObjectKey().isEmpty()) {
                         try {
                             String coverUrl = minioClient.getPresignedObjectUrl(
                                     io.minio.GetPresignedObjectUrlArgs.builder()
                                             .method(io.minio.http.Method.GET)
                                             .bucket(bucket)
-                                            .object(entity.getObjectKey())
+                                            .object(row.getObjectKey())
                                             .expiry(24, TimeUnit.HOURS)
                                             .build());
                             resp.setUploadUrl(coverUrl);
                         } catch (Exception e) {
-                            log.warn("Failed to generate cover URL for noteId={}", entity.getId(), e);
+                            log.warn("Failed to generate cover URL for noteId={}", row.getId(), e);
                         }
                     }
                     return resp;
                 })
                 .collect(Collectors.toList());
 
-        // Batch-populate like and favorite counts
         if (!responses.isEmpty()) {
             List<Long> noteIds = responses.stream().map(NoteDetailResponse::getNoteId).toList();
             Map<Long, InteractionService.StatusResult> likes =

@@ -83,6 +83,63 @@ git update-index --skip-worktree <file>    # 忽略后续修改
 git update-index --no-skip-worktree <file> # 恢复追踪
 ```
 
+### 从全量历史中删除（git filter-branch）
+
+**场景**：`git rm --cached` 只清理了最新提交，但历史提交中仍有这些文件。这会导致：
+- `git push` 被 GitHub 拒绝（单个文件 > 100MB）
+- 仓库臃肿，clone 很慢
+
+**与 `git rm --cached` 的区别**：
+
+| 命令 | 作用范围 | 适用场景 |
+|------|---------|---------|
+| `git rm -r --cached .` | 仅最新提交 | 还没 push，只需修正当前状态 |
+| `git filter-branch` | 全部历史提交 | 已经 push，或者 push 被拒绝 |
+
+**原理**：`filter-branch` 遍历仓库所有提交，对每个提交执行 `--index-filter` 中的命令，重写整个历史。所有提交 SHA 会改变。
+
+**关键注意**：
+- 外层用双引号 `"..."`，内层用单引号 `'...'` — bash 和 PowerShell 都是如此
+- **不要用 PowerShell 的 `` ` `` 折行符**，`filter-branch` 内部是 bash 执行
+- **不要用 `\` 折行符**，在 Windows 上 bash 也无法正确解析
+
+#### 完整流程
+
+```bash
+# 步骤 1: 清理之前失败的 filter-branch 残留（如果有）
+git update-ref -d refs/original/refs/heads/master 2>/dev/null
+
+# 步骤 2: 从全部历史中删除匹配的文件
+# 关键：外层双引号，内层单引号，写成单行
+git filter-branch --force --index-filter "git rm --cached --ignore-unmatch -r '*.class' '*.jar' '*.jar.original' '*.war' '*.ear' '*.tar' '*.tar.gz' '*.tar.bz2' '*.tar.xz' '*.zip' '*.gz' '*.rar' '*.log' '*.tmp' '*.bak' '*.pid' '*.swp' '*.swo' '*.iml' '*.iws' '*.ipr' 'target/' 'build/' 'dist/' 'out/' 'bin/' 'release/' 'output/' 'logs/' '.idea/' '.settings/' '.vscode/' '.DS_Store' 'Thumbs.db' 'Desktop.ini' 'dependency-reduced-pom.xml'" --prune-empty -- --all
+
+# 步骤 3: 清理 filter-branch 产生的备份引用
+git for-each-ref --format="%(refname)" refs/original/ | xargs git update-ref -d
+git reflog expire --expire=now --all
+git gc --aggressive --prune=now
+
+# 步骤 4: 强制推送（历史已重写）
+git push origin master --force
+```
+
+**参数说明**：
+
+| 参数 | 作用 |
+|------|------|
+| `--force` | 覆盖之前失败的 filter-branch 残留 |
+| `--index-filter` | 不 checkout 文件，只操作索引，比 `tree-filter` 快 10-100 倍 |
+| `--ignore-unmatch` | 某次提交中没有匹配文件也不报错，继续处理下一个 |
+| `--prune-empty` | 某次提交全部被删则丢弃该提交 |
+| `-- --all` | 对所有分支执行 |
+
+**陷阱记录**：
+
+1. **PowerShell 折行问题**：`git filter-branch` 内部启动 bash 执行 index-filter。如果用 PowerShell 的 `` ` `` 折行，这些字符会传入 bash 被当成命令名执行，报 `*.class: command not found`。
+
+2. **引用嵌套问题**：最外层必须用双引号 `"..."` 保护单引号不被 PowerShell 吃掉，内层用单引号 `'...'` 让 bash 做 glob 展开。反过来（外层单引号内层双引号）在 PowerShell 中会失败。
+
+3. **备份残留**：`filter-branch` 失败后 `refs/original/` 仍有备份，下次运行会因为新旧树匹配直接跳过。必须先 `git update-ref -d` 清理。
+
 ---
 
 ## 2. 撤销操作

@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: note-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
   cassandra:
     keyspace-name: notes
     contact-points: localhost
@@ -22,7 +26,7 @@ spring:
     password: root
     driver-class-name: com.mysql.cj.jdbc.Driver
   kafka:
-    bootstrap-servers: localhost:9092
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
     producer:
       key-serializer: org.apache.kafka.common.serialization.StringSerializer
       value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
@@ -35,7 +39,10 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:18848
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
 
 minio:
   endpoint: http://localhost:19000
@@ -47,7 +54,7 @@ dubbo:
   application:
     name: note-service
   registry:
-    address: nacos://localhost:18848
+    address: nacos://${NACOS_HOST:localhost}:18848
   protocol:
     name: tri
     port: 20882

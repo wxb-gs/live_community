@@ -52,7 +52,8 @@ echo "OK"
 
 # ---- canal-server ----
 echo -n "  canal-server ... "
-until curl -sf http://localhost:11111 > /dev/null 2>&1; do sleep 3; done
+# Canal uses a custom TCP protocol, not HTTP — check port connectivity instead
+	until timeout 2 bash -c "echo >/dev/tcp/localhost/11111" 2>/dev/null; do sleep 3; done
 echo "OK"
 
 echo ""

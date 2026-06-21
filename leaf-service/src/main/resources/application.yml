@@ -4,6 +4,10 @@ server:
 spring:
   application:
     name: leaf-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
   datasource:
     url: jdbc:mysql://localhost:13306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
     username: root
@@ -12,13 +16,16 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:18848
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
 
 dubbo:
   application:
     name: leaf-service
   registry:
-    address: nacos://localhost:18848
+    address: nacos://${NACOS_HOST:localhost}:18848
   protocol:
     name: tri
     port: 20881

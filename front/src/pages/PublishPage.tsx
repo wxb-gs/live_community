@@ -57,99 +57,100 @@ export default function PublishPage() {
   };
 
   return (
-    <div className="bg-white min-h-screen pb-24">
-      <header className="sticky top-0 bg-white/95 backdrop-blur-lg z-30 px-4 py-3 border-b border-border-light flex items-center justify-between">
-        <button
-          onClick={handleCancel}
-          className="text-sm text-text-secondary font-medium hover:text-text-primary transition-colors px-1"
-        >
-          取消
-        </button>
-        <h1 className="text-base font-bold text-text-primary">发布笔记</h1>
-        <div className="w-10" />
-      </header>
-
-      <div className="px-4 pt-4 space-y-4">
-        {error && (
-          <div className="bg-red-50 text-red-500 text-sm rounded-xl px-4 py-3 flex items-center gap-2" role="alert">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <circle cx="12" cy="12" r="10" />
-              <path d="M12 8v4M12 16h.01" />
-            </svg>
-            {error}
-          </div>
-        )}
-        {successMsg && (
-          <div className="bg-emerald-50 text-emerald-600 text-sm rounded-xl px-4 py-3 flex items-center gap-2" role="status">
-            <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
-              <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" />
-              <path d="M22 4L12 14.01l-3-3" />
-            </svg>
-            {successMsg}
-          </div>
-        )}
-
-        <div>
-          <label className="block text-[13px] font-semibold text-text-secondary mb-2 ml-1">
-            封面图片
-          </label>
-          <ImageUploader
-            onUploaded={(name, type) => {
-              setFileName(name);
-              setContentType(type);
-            }}
-          />
-        </div>
-
-        <div>
-          <label htmlFor="publish-title" className="block text-[13px] font-semibold text-text-secondary mb-1.5 ml-1">
-            标题
-          </label>
-          <input
-            id="publish-title"
-            type="text"
-            value={title}
-            onChange={(e) => setTitle(e.target.value)}
-            placeholder="给你的笔记起个名字..."
-            maxLength={100}
-            className="w-full text-[16px] font-bold px-1 py-2 outline-none ring-1 ring-transparent rounded-lg focus:ring-brand/20 transition-all placeholder:text-text-muted/60 bg-transparent"
-          />
-        </div>
-
-        <div>
-          <label htmlFor="publish-content" className="block text-[13px] font-semibold text-text-secondary mb-1.5 ml-1">
-            内容
-          </label>
-          <textarea
-            id="publish-content"
-            value={content}
-            onChange={(e) => setContent(e.target.value)}
-            placeholder="分享你的想法..."
-            rows={10}
-            maxLength={5000}
-            className="w-full text-[15px] leading-relaxed px-1 py-2 outline-none ring-1 ring-transparent rounded-lg focus:ring-brand/20 transition-all resize-none placeholder:text-text-muted/60 bg-transparent"
-          />
-        </div>
-
-        <div className="text-right text-[11px] text-text-muted/70 font-medium">
-          {content.length}/5000
-        </div>
-
-        <div className="flex gap-3 pt-2">
+    <div className="max-w-3xl mx-auto px-6 h-[calc(100vh-61px)] flex flex-col justify-center">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col max-h-full overflow-hidden">
+        {/* Header */}
+        <div className="flex items-center justify-between px-6 py-4 border-b border-gray-100 flex-shrink-0">
           <button
-            onClick={() => handlePublish(true)}
-            disabled={publishing}
-            className="flex-1 h-11 rounded-full border border-border bg-bg-card text-text-secondary text-sm font-medium hover:bg-bg-page active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-200"
+            onClick={handleCancel}
+            className="text-[14px] text-text-secondary font-medium hover:text-text-primary transition-colors"
           >
-            {publishing ? '保存中...' : '存草稿'}
+            取消
           </button>
-          <button
-            onClick={() => handlePublish(false)}
-            disabled={publishing}
-            className="flex-1 h-11 rounded-full bg-brand text-white text-sm font-bold hover:bg-brand-hover active:scale-[0.98] disabled:opacity-50 disabled:active:scale-100 transition-all duration-200 shadow-sm shadow-brand/25"
-          >
-            {publishing ? '发布中...' : '发布笔记'}
-          </button>
+          <h1 className="text-base font-bold text-text-primary">发布笔记</h1>
+          <div className="w-12" />
+        </div>
+
+        <div className="px-6 py-5 space-y-4 overflow-y-auto flex-1 min-h-0">
+          {error && (
+            <div className="bg-red-50 text-red-500 text-sm rounded-xl px-4 py-3 flex items-center gap-2" role="alert">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <circle cx="12" cy="12" r="10" /><path d="M12 8v4M12 16h.01" />
+              </svg>
+              {error}
+            </div>
+          )}
+          {successMsg && (
+            <div className="bg-emerald-50 text-emerald-600 text-sm rounded-xl px-4 py-3 flex items-center gap-2" role="status">
+              <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+                <path d="M22 11.08V12a10 10 0 1 1-5.93-9.14" /><path d="M22 4L12 14.01l-3-3" />
+              </svg>
+              {successMsg}
+            </div>
+          )}
+
+          <div>
+            <label className="block text-[13px] font-semibold text-text-secondary mb-2 ml-1">
+              封面图片
+            </label>
+            <ImageUploader
+              onUploaded={(name, type) => {
+                setFileName(name);
+                setContentType(type);
+              }}
+            />
+          </div>
+
+          <div>
+            <label htmlFor="publish-title" className="block text-[13px] font-semibold text-text-secondary mb-1.5 ml-1">
+              标题
+            </label>
+            <input
+              id="publish-title"
+              type="text"
+              value={title}
+              onChange={(e) => setTitle(e.target.value)}
+              placeholder="给你的笔记起个名字..."
+              maxLength={100}
+              className="w-full text-[18px] font-bold px-3 py-3 bg-gray-50 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-brand/20 transition-all placeholder:text-text-muted/50"
+            />
+          </div>
+
+          <div>
+            <label htmlFor="publish-content" className="block text-[13px] font-semibold text-text-secondary mb-1.5 ml-1">
+              内容
+            </label>
+            <textarea
+              id="publish-content"
+              value={content}
+              onChange={(e) => setContent(e.target.value)}
+              placeholder="分享你的想法..."
+              rows={6}
+              maxLength={5000}
+              className="w-full text-[15px] leading-relaxed px-3 py-3 bg-gray-50 rounded-xl outline-none focus:bg-white focus:ring-2 focus:ring-brand/20 transition-all resize-none placeholder:text-text-muted/50"
+            />
+          </div>
+
+          <div className="text-right text-[12px] text-text-muted/60 font-medium">
+            {content.length}/5000
+          </div>
+
+          <div className="flex gap-3 pt-2">
+            <button
+              onClick={() => handlePublish(true)}
+              disabled={publishing}
+              className="flex-1 h-11 rounded-full border border-gray-200 bg-white text-text-secondary text-[14px] font-medium hover:bg-gray-50 active:scale-[0.98] disabled:opacity-50 transition-all duration-200"
+            >
+              {publishing ? '保存中...' : '存草稿'}
+            </button>
+            <button
+              onClick={() => handlePublish(false)}
+              disabled={publishing}
+              className="flex-1 h-11 rounded-full bg-brand text-white text-[14px] font-bold hover:bg-brand-hover active:scale-[0.98] disabled:opacity-50 transition-all duration-200 shadow-sm shadow-brand/25"
+            >
+              {publishing ? '发布中...' : '发布笔记'}
+            </button>
+          </div>
         </div>
       </div>
 

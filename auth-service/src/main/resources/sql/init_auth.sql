@@ -55,6 +55,7 @@ CREATE TABLE IF NOT EXISTS note (
     summary     VARCHAR(512),
     tags        VARCHAR(512) DEFAULT '',
     category    VARCHAR(64) DEFAULT 'general',
+    object_key  VARCHAR(512) DEFAULT NULL,
     view_count  INT DEFAULT 0,
     like_count  INT DEFAULT 0,
     status      VARCHAR(16) DEFAULT 'PUBLISHED',

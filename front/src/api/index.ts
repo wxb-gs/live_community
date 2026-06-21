@@ -46,6 +46,14 @@ export async function fetchNotes(page: number, size: number): Promise<NoteSummar
   return request<NoteSummary[]>(`/api/note/list?page=${page}&size=${size}`);
 }
 
+export async function fetchFollowingNotes(page: number, size: number): Promise<NoteSummary[]> {
+  return request<NoteSummary[]>(`/api/note/following?page=${page}&size=${size}`);
+}
+
+export async function fetchMyNotes(page: number, size: number): Promise<NoteSummary[]> {
+  return request<NoteSummary[]>(`/api/note/my?page=${page}&size=${size}`);
+}
+
 export async function fetchNoteDetail(noteId: number): Promise<NoteDetail> {
   return request<NoteDetail>(`/api/note/detail?noteId=${noteId}`);
 }

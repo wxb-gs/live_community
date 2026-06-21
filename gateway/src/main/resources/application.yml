@@ -4,6 +4,17 @@ server:
 spring:
   application:
     name: gateway
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
   redis:
     host: ${REDIS_HOST:localhost}
     port: ${REDIS_PORT:16379}
@@ -12,7 +23,7 @@ dubbo:
   application:
     name: gateway
   registry:
-    address: nacos://localhost:18848
+    address: nacos://${NACOS_HOST:localhost}:18848
 
 jwt:
   secret: super-secret-key-change-in-production

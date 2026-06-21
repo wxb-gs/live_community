@@ -4,11 +4,17 @@ server:
 spring:
   application:
     name: search-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
   cloud:
     nacos:
       discovery:
         server-addr: ${NACOS_HOST:localhost}:18848
         enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
 
 dubbo:
   application:

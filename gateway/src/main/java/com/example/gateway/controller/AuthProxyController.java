@@ -2,8 +2,7 @@ package com.example.gateway.controller;
 
 import jakarta.servlet.http.HttpServletRequest;
 import jakarta.servlet.http.HttpServletResponse;
-import org.apache.hc.client5.http.impl.classic.CloseableHttpClient;
-import org.apache.hc.client5.http.impl.classic.HttpClientBuilder;
+import org.springframework.beans.factory.annotation.Value;
 import org.springframework.http.HttpEntity;
 import org.springframework.http.HttpHeaders;
 import org.springframework.http.HttpMethod;
@@ -21,14 +20,11 @@ import java.util.Enumeration;
 public class AuthProxyController {
 
     private final RestTemplate restTemplate;
-    private static final String AUTH_SERVICE = "http://auth-service:8084";
+    private final String authServiceUrl;
 
-    public AuthProxyController() {
-        CloseableHttpClient httpClient = HttpClientBuilder.create()
-                .disableAuthCaching()
-                .disableAutomaticRetries()
-                .build();
-        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory(httpClient));
+    public AuthProxyController(@Value("${auth.service.url:http://localhost:8084}") String authServiceUrl) {
+        this.authServiceUrl = authServiceUrl;
+        this.restTemplate = new RestTemplate(new HttpComponentsClientHttpRequestFactory());
         this.restTemplate.setErrorHandler(new ResponseErrorHandler() {
             @Override
             public boolean hasError(ClientHttpResponse response) { return false; }
@@ -42,7 +38,7 @@ public class AuthProxyController {
                       @RequestBody(required = false) String body) {
         String path = request.getRequestURI();
         String query = request.getQueryString();
-        String url = AUTH_SERVICE + path + (query != null ? "?" + query : "");
+        String url = authServiceUrl + path + (query != null ? "?" + query : "");
 
         HttpHeaders headers = new HttpHeaders();
         Enumeration<String> headerNames = request.getHeaderNames();

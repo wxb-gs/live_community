@@ -4,10 +4,17 @@ server:
 spring:
   application:
     name: upload-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:18848
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
 
 minio:
   endpoint: http://localhost:19000
@@ -19,7 +26,7 @@ dubbo:
   application:
     name: upload-service
   registry:
-    address: nacos://localhost:18848
+    address: nacos://${NACOS_HOST:localhost}:18848
   protocol:
     name: tri
     port: 20880

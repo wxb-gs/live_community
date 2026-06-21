@@ -1,9 +1,13 @@
+import { useState, useEffect } from 'react';
 import { BrowserRouter, Routes, Route, Navigate, useLocation, Outlet } from 'react-router-dom';
-import TabBar from './components/TabBar';
+import Sidebar from './components/Sidebar';
+import TopHeader from './components/TopHeader';
 import FeedPage from './pages/FeedPage';
 import NoteDetailPage from './pages/NoteDetailPage';
 import PublishPage from './pages/PublishPage';
 import SearchPage from './pages/SearchPage';
+import FollowingPage from './pages/FollowingPage';
+import AboutPage from './pages/AboutPage';
 import LoginPage from './pages/LoginPage';
 import ProfilePage from './pages/ProfilePage';
 import WechatCallbackPage from './pages/WechatCallbackPage';
@@ -18,25 +22,45 @@ function AuthGuard({ children }: { children: React.ReactNode }) {
   return <>{children}</>;
 }
 
-function MainLayout() {
+function FloatingActions() {
+  const [visible, setVisible] = useState(false);
+
+  useEffect(() => {
+    const onScroll = () => setVisible(window.scrollY > 400);
+    window.addEventListener('scroll', onScroll, { passive: true });
+    return () => window.removeEventListener('scroll', onScroll);
+  }, []);
+
+  const scrollToTop = () => {
+    window.scrollTo({ top: 0, behavior: 'smooth' });
+  };
+
   return (
-    <>
-      <main className="min-h-screen bg-bg-page max-w-lg mx-auto relative shadow-float pb-16 safe-bottom">
-        <Outlet />
-      </main>
-      <TabBar />
-    </>
+    <div className={`fixed bottom-8 right-8 flex flex-col gap-2.5 z-30 transition-all duration-300 ease-out ${visible ? 'opacity-100 translate-y-0' : 'opacity-0 translate-y-4 pointer-events-none'}`}>
+      <button
+        onClick={scrollToTop}
+        className="w-10 h-10 rounded-full bg-white/90 backdrop-blur-sm shadow-lg shadow-black/5 border border-gray-100/80 flex items-center justify-center text-text-muted hover:text-brand hover:shadow-xl hover:shadow-brand/5 hover:border-brand/20 hover:-translate-y-0.5 active:scale-95 transition-all duration-300 ease-out"
+        aria-label="回到顶部"
+      >
+        <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" strokeWidth="2" strokeLinecap="round" strokeLinejoin="round">
+          <path d="m18 15-6-6-6 6" />
+        </svg>
+      </button>
+    </div>
   );
 }
 
-function ComingSoon({ title, icon }: { title: string; icon: React.ReactNode }) {
+function DesktopLayout() {
   return (
-    <div className="flex flex-col items-center justify-center h-[80vh] text-text-muted gap-4 px-6">
-      <div className="w-20 h-20 rounded-full bg-brand-light flex items-center justify-center">
-        {icon}
+    <div className="min-h-screen bg-page-subtle">
+      <Sidebar />
+      <div className="ml-[220px] min-h-screen flex flex-col">
+        <TopHeader />
+        <main className="flex-1">
+          <Outlet />
+        </main>
       </div>
-      <p className="text-sm font-medium text-text-secondary">{title}</p>
-      <p className="text-xs text-text-muted/60 -mt-2">功能开发中，敬请期待</p>
+      <FloatingActions />
     </div>
   );
 }
@@ -45,28 +69,21 @@ export default function App() {
   return (
     <BrowserRouter>
       <Routes>
+        {/* Public routes — no sidebar */}
         <Route path="/login" element={<LoginPage />} />
         <Route path="/wechat/callback" element={<WechatCallbackPage />} />
         <Route path="/taobao/callback" element={<TaobaoCallbackPage />} />
-        <Route element={<AuthGuard><MainLayout /></AuthGuard>}>
+        <Route path="/about" element={<AboutPage />} />
+
+        {/* Protected routes — desktop layout with sidebar */}
+        <Route element={<AuthGuard><DesktopLayout /></AuthGuard>}>
           <Route path="/" element={<FeedPage />} />
           <Route path="/note/:noteId" element={<NoteDetailPage />} />
           <Route path="/publish" element={<PublishPage />} />
           <Route path="/search" element={<SearchPage />} />
+          <Route path="/following" element={<FollowingPage />} />
           <Route path="/profile" element={<ProfilePage />} />
-          <Route
-            path="/messages"
-            element={
-              <ComingSoon
-                title="消息中心"
-                icon={
-                  <svg width="36" height="36" viewBox="0 0 24 24" fill="none" stroke="#ff2442" strokeWidth="1.5" strokeLinecap="round" strokeLinejoin="round">
-                    <path d="M4 6a2 2 0 0 1 2-2h12a2 2 0 0 1 2 2v9a2 2 0 0 1-2 2H9l-4 3V6Z" />
-                  </svg>
-                }
-              />
-            }
-          />
+          <Route path="/messages" element={<FeedPage />} />
         </Route>
       </Routes>
     </BrowserRouter>
