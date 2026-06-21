@@ -17,6 +17,7 @@
         <module>leaf-service</module>
         <module>note-service</module>
         <module>auth-service</module>
+        <module>search-sync-service</module>
     </modules>
 
     <properties>

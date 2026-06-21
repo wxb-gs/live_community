@@ -1,0 +1,33 @@
+server:
+  port: 8085
+
+spring:
+  application:
+    name: search-sync-service
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:8848
+        enabled: true
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    consumer:
+      group-id: search-sync-group
+      key-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      value-deserializer: org.apache.kafka.common.serialization.StringDeserializer
+      max-poll-records: 500
+
+dubbo:
+  application:
+    name: search-sync-service
+    qos-enable: false
+  registry:
+    address: nacos://${NACOS_HOST:localhost}:8848
+    register: false
+  protocol:
+    name: tri
+    port: 20885
+
+elasticsearch:
+  host: ${ES_HOST:localhost}
+  port: ${ES_PORT:9200}
