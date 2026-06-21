@@ -1,5 +1,11 @@
+# ============================================================
+# Infrastructure-only docker-compose for local development.
+# Application services (leaf/upload/note/gateway/auth/search-*)
+# run directly on the host — see scripts/start-all.sh
+# ============================================================
+
 services:
-  # ==================== Infrastructure ====================
+  # ==================== Service Discovery ====================
 
   nacos:
     image: nacos/nacos-server:v2.3.0
@@ -18,9 +24,17 @@ services:
     networks:
       - live-community
 
+  # ==================== Databases ====================
+
   mysql:
     image: mysql:8.0
     container_name: mysql
+    # ---- Canal binlog requirements ----
+    command:
+      - --log-bin=mysql-bin
+      - --binlog-format=ROW
+      - --server-id=1
+      - --binlog-row-image=FULL
     environment:
       MYSQL_ROOT_PASSWORD: root
       MYSQL_DATABASE: live_community
@@ -35,43 +49,6 @@ services:
       interval: 10s
       timeout: 5s
       retries: 30
-    networks:
-      - live-community
-
-  minio:
-    image: minio/minio:latest
-    container_name: minio
-    command: server /data --console-address ":9001"
-    environment:
-      MINIO_ROOT_USER: minioadmin
-      MINIO_ROOT_PASSWORD: minioadmin
-    ports:
-      - "19000:9000"
-      - "19001:9001"
-    volumes:
-      - minio-data:/data
-    healthcheck:
-      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
-      interval: 10s
-      timeout: 5s
-      retries: 30
-    networks:
-      - live-community
-
-  minio-init:
-    image: minio/mc:latest
-    container_name: minio-init
-    depends_on:
-      minio:
-        condition: service_healthy
-    entrypoint: >
-      sh -c "
-      mc alias set local http://minio:9000 minioadmin minioadmin;
-      mc mb local/uploads --ignore-existing;
-      mc mb local/notes --ignore-existing;
-      echo 'MinIO buckets created';
-      exit 0
-      "
     networks:
       - live-community
 
@@ -92,6 +69,8 @@ services:
       start_period: 60s
     networks:
       - live-community
+
+  # ==================== Cache & Message Queue ====================
 
   redis:
     image: redis:7-alpine
@@ -131,6 +110,47 @@ services:
     networks:
       - live-community
 
+  # ==================== Object Storage ====================
+
+  minio:
+    image: minio/minio:latest
+    container_name: minio
+    command: server /data --console-address ":9001"
+    environment:
+      MINIO_ROOT_USER: minioadmin
+      MINIO_ROOT_PASSWORD: minioadmin
+    ports:
+      - "19000:9000"
+      - "19001:9001"
+    volumes:
+      - minio-data:/data
+    healthcheck:
+      test: ["CMD", "curl", "-f", "http://localhost:9000/minio/health/live"]
+      interval: 10s
+      timeout: 5s
+      retries: 30
+    networks:
+      - live-community
+
+  minio-init:
+    image: minio/mc:latest
+    container_name: minio-init
+    depends_on:
+      minio:
+        condition: service_healthy
+    entrypoint: >
+      sh -c "
+      mc alias set local http://minio:9000 minioadmin minioadmin;
+      mc mb local/uploads --ignore-existing;
+      mc mb local/notes --ignore-existing;
+      echo 'MinIO buckets created';
+      exit 0
+      "
+    networks:
+      - live-community
+
+  # ==================== Search Infrastructure ====================
+
   elasticsearch:
     image: docker.elastic.co/elasticsearch/elasticsearch:8.12.0
     container_name: elasticsearch
@@ -149,7 +169,7 @@ services:
       - live-community
 
   canal-server:
-    image: canal/canal-server:v1.1.7
+    image: canal/canal-server:v1.1.8
     container_name: canal-server
     ports:
       - "11111:11111"
@@ -160,163 +180,13 @@ services:
       CANAL_INSTANCE_MASTER_ADDRESS: mysql:3306
       CANAL_INSTANCE_DBUSERNAME: root
       CANAL_INSTANCE_DBPASSWORD: root
+      CANAL_SERVER_MODE: kafka
+      CANAL_MQ_SERVERS: kafka:9092
+      KAFKA_BOOTSTRAP_SERVERS: kafka:9092
     depends_on:
       mysql:
         condition: service_healthy
       kafka:
-        condition: service_healthy
-    networks:
-      - live-community
-
-  # ==================== Application Services ====================
-
-  leaf-service:
-    build: ./leaf-service
-    container_name: leaf-service
-    ports:
-      - "8082:8082"
-      - "20881:20881"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
-      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-    depends_on:
-      nacos:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-    networks:
-      - live-community
-
-  upload-service:
-    build: ./upload-service
-    container_name: upload-service
-    ports:
-      - "8081:8081"
-      - "20880:20880"
-    environment:
-      MINIO_ENDPOINT: http://minio:9000
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
-      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-    depends_on:
-      nacos:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-    networks:
-      - live-community
-
-  note-service:
-    build: ./note-service
-    container_name: note-service
-    ports:
-      - "8083:8083"
-      - "20882:20882"
-    environment:
-      MINIO_ENDPOINT: http://minio:9000
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
-      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-      SPRING_CASSANDRA_CONTACT-POINTS: cassandra
-      SPRING_CASSANDRA_PORT: "9042"
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: "6379"
-      SPRING_KAFKA_BOOTSTRAP_SERVERS: kafka:9092
-    depends_on:
-      nacos:
-        condition: service_healthy
-      minio:
-        condition: service_healthy
-      minio-init:
-        condition: service_completed_successfully
-      cassandra:
-        condition: service_healthy
-      leaf-service:
-        condition: service_started
-    networks:
-      - live-community
-
-  gateway:
-    build: ./gateway
-    container_name: gateway
-    ports:
-      - "8080:8080"
-    environment:
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
-      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-    depends_on:
-      nacos:
-        condition: service_healthy
-      upload-service:
-        condition: service_started
-      note-service:
-        condition: service_started
-      search-service:
-        condition: service_started
-    networks:
-      - live-community
-
-  auth-service:
-    build: ./auth-service
-    container_name: auth-service
-    ports:
-      - "8084:8084"
-      - "20884:20884"
-    environment:
-      SPRING_DATASOURCE_URL: jdbc:mysql://mysql:3306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-      SPRING_DATA_REDIS_HOST: redis
-      SPRING_DATA_REDIS_PORT: 6379
-      SPRING_CLOUD_NACOS_DISCOVERY_SERVER-ADDR: nacos:8848
-      DUBBO_REGISTRY_ADDRESS: nacos://nacos:8848
-      JWT_SECRET: ${JWT_SECRET:-super-secret-key-change-in-production}
-      WECHAT_APP_ID: ${WECHAT_APP_ID:-}
-      WECHAT_APP_SECRET: ${WECHAT_APP_SECRET:-}
-    depends_on:
-      nacos:
-        condition: service_healthy
-      mysql:
-        condition: service_healthy
-      redis:
-        condition: service_healthy
-    networks:
-      - live-community
-
-  search-sync-service:
-    build: ./search-sync-service
-    container_name: search-sync-service
-    ports:
-      - "8085:8085"
-    environment:
-      NACOS_HOST: nacos
-      KAFKA_HOST: kafka
-      ES_HOST: elasticsearch
-      ES_PORT: "9200"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      elasticsearch:
-        condition: service_healthy
-      kafka:
-        condition: service_healthy
-    networks:
-      - live-community
-
-  search-service:
-    build: ./search-service
-    container_name: search-service
-    ports:
-      - "8086:8086"
-      - "20886:20886"
-    environment:
-      NACOS_HOST: nacos
-      ES_HOST: elasticsearch
-      ES_PORT: "9200"
-    depends_on:
-      nacos:
-        condition: service_healthy
-      elasticsearch:
         condition: service_healthy
     networks:
       - live-community

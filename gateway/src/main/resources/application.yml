@@ -6,13 +6,13 @@ spring:
     name: gateway
   redis:
     host: ${REDIS_HOST:localhost}
-    port: ${REDIS_PORT:6379}
+    port: ${REDIS_PORT:16379}
 
 dubbo:
   application:
     name: gateway
   registry:
-    address: nacos://localhost:8848
+    address: nacos://localhost:18848
 
 jwt:
   secret: super-secret-key-change-in-production

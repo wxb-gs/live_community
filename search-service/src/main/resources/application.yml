@@ -7,7 +7,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_HOST:localhost}:8848
+        server-addr: ${NACOS_HOST:localhost}:18848
         enabled: true
 
 dubbo:
@@ -15,7 +15,7 @@ dubbo:
     name: search-service
     qos-enable: false
   registry:
-    address: nacos://${NACOS_HOST:localhost}:8848
+    address: nacos://${NACOS_HOST:localhost}:18848
   protocol:
     name: tri
     port: 20886

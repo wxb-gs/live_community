@@ -7,10 +7,10 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: localhost:8848
+        server-addr: localhost:18848
 
 minio:
-  endpoint: http://localhost:9000
+  endpoint: http://localhost:19000
   access-key: minioadmin
   secret-key: minioadmin
   bucket: uploads
@@ -19,7 +19,7 @@ dubbo:
   application:
     name: upload-service
   registry:
-    address: nacos://localhost:8848
+    address: nacos://localhost:18848
   protocol:
     name: tri
     port: 20880

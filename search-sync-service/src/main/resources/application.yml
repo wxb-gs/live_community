@@ -7,7 +7,7 @@ spring:
   cloud:
     nacos:
       discovery:
-        server-addr: ${NACOS_HOST:localhost}:8848
+        server-addr: ${NACOS_HOST:localhost}:18848
         enabled: true
   kafka:
     bootstrap-servers: ${KAFKA_HOST:localhost}:9092
@@ -22,7 +22,7 @@ dubbo:
     name: search-sync-service
     qos-enable: false
   registry:
-    address: nacos://${NACOS_HOST:localhost}:8848
+    address: nacos://${NACOS_HOST:localhost}:18848
     register: false
   protocol:
     name: tri
