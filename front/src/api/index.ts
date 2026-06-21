@@ -75,8 +75,12 @@ export async function getPresignedUrl(
 }
 
 export function toExternalUrl(url: string): string {
+  if (!url) return '';
   try {
     const u = new URL(url);
+    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
+      return url;
+    }
     return '/minio' + u.pathname + u.search;
   } catch {
     return url.replace('http://minio:9000', '/minio');

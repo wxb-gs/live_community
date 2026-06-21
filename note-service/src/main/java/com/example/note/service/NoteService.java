@@ -138,7 +138,7 @@ public class NoteService {
                                 .object(row.getObjectKey())
                                 .expiry(24, TimeUnit.HOURS)
                                 .build());
-                resp.setUploadUrl(coverUrl);
+                resp.setCoverUrl(coverUrl);
             } catch (Exception e) {
                 log.warn("Failed to generate cover URL for noteId={}", noteId, e);
             }
@@ -225,7 +225,7 @@ public class NoteService {
                                             .object(row.getObjectKey())
                                             .expiry(24, TimeUnit.HOURS)
                                             .build());
-                            resp.setUploadUrl(coverUrl);
+                            resp.setCoverUrl(coverUrl);
                         } catch (Exception e) {
                             log.warn("Failed to generate cover URL for noteId={}", row.getId(), e);
                         }

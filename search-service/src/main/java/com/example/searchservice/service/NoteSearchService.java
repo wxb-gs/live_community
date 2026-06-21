@@ -45,9 +45,9 @@ public class NoteSearchService {
                                     .query(request.getQ())
                                 ));
                                 if (request.getCategory() != null && !request.getCategory().isEmpty()) {
-                                    b.filter(f -> f.term(t -> t.field("category").value(request.getCategory())));
+                                    b.filter(f -> f.term(t -> t.field("category.keyword").value(request.getCategory())));
                                 }
-                                b.filter(f -> f.term(t -> t.field("status").value("PUBLISHED")));
+                                b.filter(f -> f.term(t -> t.field("status.keyword").value("PUBLISHED")));
                                 return b;
                             })
                         )
@@ -67,12 +67,15 @@ public class NoteSearchService {
                 .from(from)
                 .size(size)
                 .sort(sort -> {
-                    if ("views".equals(request.getSort())) {
+                    String sortBy = request.getSort();
+                    if ("views".equals(sortBy)) {
                         sort.field(f -> f.field("view_count").order(SortOrder.Desc));
-                    } else if ("likes".equals(request.getSort())) {
+                    } else if ("likes".equals(sortBy)) {
                         sort.field(f -> f.field("like_count").order(SortOrder.Desc));
-                    } else if ("time".equals(request.getSort())) {
+                    } else if ("time".equals(sortBy)) {
                         sort.field(f -> f.field("created_at").order(SortOrder.Desc));
+                    } else {
+                        sort.field(f -> f.field("_score").order(SortOrder.Desc));
                     }
                     return sort;
                 })

@@ -27,7 +27,7 @@ release/
 # Docker build context (not the Dockerfile itself)
 !Dockerfile
 !.dockerignore
-
+assets/test
 # ── IDE ──
 # IntelliJ IDEA
 .idea/

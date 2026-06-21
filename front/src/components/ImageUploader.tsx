@@ -1,18 +1,16 @@
 import { useState, useRef, useCallback } from 'react';
-import { getPresignedUrl, uploadToMinio } from '../api';
 
 interface Props {
-  onUploaded: (fileName: string, contentType: string) => void;
+  onFileSelected: (file: File) => void;
 }
 
-export default function ImageUploader({ onUploaded }: Props) {
+export default function ImageUploader({ onFileSelected }: Props) {
   const [preview, setPreview] = useState<string | null>(null);
-  const [uploading, setUploading] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [dragOver, setDragOver] = useState(false);
   const fileRef = useRef<HTMLInputElement>(null);
 
-  const processFile = useCallback(async (file: File) => {
+  const processFile = useCallback((file: File) => {
     if (!file.type.startsWith('image/')) {
       setError('请选择图片文件');
       return;
@@ -23,23 +21,13 @@ export default function ImageUploader({ onUploaded }: Props) {
     }
 
     setError(null);
-    setUploading(true);
 
     const reader = new FileReader();
     reader.onload = () => setPreview(reader.result as string);
     reader.readAsDataURL(file);
 
-    try {
-      const { uploadUrl } = await getPresignedUrl(file.name, file.type);
-      await uploadToMinio(uploadUrl, file);
-      onUploaded(file.name, file.type);
-    } catch (err) {
-      setError(err instanceof Error ? err.message : '上传失败');
-      setPreview(null);
-    } finally {
-      setUploading(false);
-    }
-  }, [onUploaded]);
+    onFileSelected(file);
+  }, [onFileSelected]);
 
   const handleFile = async (e: React.ChangeEvent<HTMLInputElement>) => {
     const file = e.target.files?.[0];
@@ -73,22 +61,14 @@ export default function ImageUploader({ onUploaded }: Props) {
       {preview ? (
         <div className="relative rounded-2xl overflow-hidden shadow-card">
           <img src={preview} alt="封面预览" className="w-full h-56 object-cover" />
-          {uploading && (
-            <div className="absolute inset-0 bg-black/40 flex flex-col items-center justify-center gap-3" role="status" aria-label="上传中">
-              <div className="w-8 h-8 border-2 border-white border-t-transparent rounded-full animate-spin" />
-              <span className="text-white text-sm font-medium">上传中...</span>
-            </div>
-          )}
-          {!uploading && (
-            <button
-              type="button"
-              onClick={() => { setPreview(null); fileRef.current?.click(); }}
-              className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full hover:bg-black/60 active:scale-95 transition-all duration-200"
-              aria-label="更换封面图片"
-            >
-              更换封面
-            </button>
-          )}
+          <button
+            type="button"
+            onClick={() => { setPreview(null); fileRef.current?.click(); }}
+            className="absolute top-3 right-3 bg-black/50 backdrop-blur-sm text-white text-xs px-3 py-1.5 rounded-full hover:bg-black/60 active:scale-95 transition-all duration-200"
+            aria-label="更换封面图片"
+          >
+            更换封面
+          </button>
         </div>
       ) : (
         <button

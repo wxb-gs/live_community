@@ -133,10 +133,10 @@ export default function NoteDetailPage() {
 
       <div className="bg-white rounded-2xl shadow-sm border border-gray-100 overflow-hidden">
         {/* Cover image */}
-        {note.uploadUrl || note.objectKey ? (
+        {note.coverUrl || note.objectKey ? (
           <div className="relative">
             <img
-              src={toExternalUrl(note.uploadUrl || '')}
+              src={toExternalUrl(note.coverUrl || '')}
               alt={note.title}
               className="w-full aspect-[16/9] object-cover"
               onError={(e) => {

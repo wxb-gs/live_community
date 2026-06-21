@@ -13,6 +13,7 @@ public class NoteDetailResponse implements Serializable {
     private String content;
     private String summary;
     private String uploadUrl;
+    private String coverUrl;
     private String objectKey;
     private String status;
     private Long createdAt;
@@ -35,6 +36,8 @@ public class NoteDetailResponse implements Serializable {
     public void setSummary(String summary) { this.summary = summary; }
     public String getUploadUrl() { return uploadUrl; }
     public void setUploadUrl(String uploadUrl) { this.uploadUrl = uploadUrl; }
+    public String getCoverUrl() { return coverUrl; }
+    public void setCoverUrl(String coverUrl) { this.coverUrl = coverUrl; }
     public String getObjectKey() { return objectKey; }
     public void setObjectKey(String objectKey) { this.objectKey = objectKey; }
     public String getStatus() { return status; }

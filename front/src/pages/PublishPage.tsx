@@ -1,20 +1,19 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createDraft, publishNote } from '../api';
+import { createDraft, publishNote, uploadToMinio } from '../api';
 import ImageUploader from '../components/ImageUploader';
 
 export default function PublishPage() {
   const navigate = useNavigate();
   const [title, setTitle] = useState('');
   const [content, setContent] = useState('');
-  const [fileName, setFileName] = useState('');
-  const [contentType, setContentType] = useState('');
+  const [coverFile, setCoverFile] = useState<File | null>(null);
   const [publishing, setPublishing] = useState(false);
   const [error, setError] = useState<string | null>(null);
   const [successMsg, setSuccessMsg] = useState<string | null>(null);
   const [showCancelConfirm, setShowCancelConfirm] = useState(false);
 
-  const hasContent = title.trim() || content.trim() || fileName;
+  const hasContent = title.trim() || content.trim() || !!coverFile;
 
   const handleCancel = useCallback(() => {
     if (hasContent) {
@@ -29,7 +28,7 @@ export default function PublishPage() {
       setError('请输入标题');
       return;
     }
-    if (!asDraft && !fileName) {
+    if (!asDraft && !coverFile) {
       setError('请上传封面图');
       return;
     }
@@ -46,7 +45,8 @@ export default function PublishPage() {
         return;
       }
 
-      await publishNote(draft.noteId, fileName, contentType);
+      const published = await publishNote(draft.noteId, coverFile!.name, coverFile!.type);
+      await uploadToMinio(published.uploadUrl, coverFile!);
       setSuccessMsg('发布成功！');
       setTimeout(() => navigate(`/note/${draft.noteId}`), 800);
     } catch (err) {
@@ -94,10 +94,7 @@ export default function PublishPage() {
               封面图片
             </label>
             <ImageUploader
-              onUploaded={(name, type) => {
-                setFileName(name);
-                setContentType(type);
-              }}
+              onFileSelected={(file) => setCoverFile(file)}
             />
           </div>
 

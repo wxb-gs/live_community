@@ -29,9 +29,12 @@ _This README was generated with ❤️ by [readme-md-generator](https://github.c
 ![about](./assets/imgs/image.png)
 
 ## 界面
-
+登录页：支持多种登录方式，账户密码、微信、淘宝、手机等
 ![登录](./assets/imgs/登录.png)
 
+
+主页：显示展示图 + 标题
+![主页](./assets/imgs/homepage.png)
 
 ## vibe coding
 

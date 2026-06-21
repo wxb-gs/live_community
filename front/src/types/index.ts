@@ -27,6 +27,7 @@ export interface NoteDetail {
   content: string;
   summary: string;
   uploadUrl: string;
+  coverUrl: string;
   objectKey: string;
   status: string;
   createdAt: number;
