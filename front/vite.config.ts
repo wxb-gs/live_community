@@ -12,11 +12,6 @@ export default defineConfig({
         target: 'http://localhost:19000',
         changeOrigin: true,
         rewrite: (path) => path.replace(/^\/minio/, ''),
-        configure: (proxy) => {
-          proxy.on('proxyReq', (proxyReq) => {
-            proxyReq.setHeader('Host', 'minio:9000');
-          });
-        },
       },
     },
   },

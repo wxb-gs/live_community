@@ -67,7 +67,12 @@ export async function getPresignedUrl(
 }
 
 export function toExternalUrl(url: string): string {
-  return url.replace('http://minio:9000', '/minio');
+  try {
+    const u = new URL(url);
+    return '/minio' + u.pathname + u.search;
+  } catch {
+    return url.replace('http://minio:9000', '/minio');
+  }
 }
 
 export async function uploadToMinio(url: string, file: File): Promise<void> {
