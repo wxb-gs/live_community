@@ -1,9 +1,0 @@
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\config\GatewaySecurityConfig.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\config\SpaResourceConfig.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\controller\AuthProxyController.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\controller\InteractionController.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\controller\NoteController.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\controller\UploadController.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\GatewayApplication.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\security\JwtAuthenticationToken.java
-C:\lib\codes\java_projects\spring_cloud_test\gateway\src\main\java\com\example\gateway\security\JwtAuthFilter.java
