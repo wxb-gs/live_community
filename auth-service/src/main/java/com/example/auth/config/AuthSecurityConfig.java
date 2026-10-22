@@ -13,30 +13,47 @@ import org.springframework.security.web.authentication.UsernamePasswordAuthentic
 @Configuration
 public class AuthSecurityConfig {
 
-    private final JwtAuthFilter jwtAuthFilter;
+  private final JwtAuthFilter jwtAuthFilter;
 
-    public AuthSecurityConfig(JwtAuthFilter jwtAuthFilter) {
-        this.jwtAuthFilter = jwtAuthFilter;
-    }
+  public AuthSecurityConfig(JwtAuthFilter jwtAuthFilter) {
+    this.jwtAuthFilter = jwtAuthFilter;
+  }
 
-    @Bean
-    SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
-        http
-            .csrf(csrf -> csrf.disable())
-            .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
-            .authorizeHttpRequests(auth -> auth
-                .anyRequest().permitAll()
-            )
-            .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
-        return http.build();
-    }
+  @Bean
+  SecurityFilterChain filterChain(HttpSecurity http) throws Exception {
+    http.csrf(csrf -> csrf.disable())
+        .sessionManagement(sm -> sm.sessionCreationPolicy(SessionCreationPolicy.STATELESS))
+        .authorizeHttpRequests(
+            auth ->
+                auth.requestMatchers(
+                        "/api/auth/register",
+                        "/api/auth/login",
+                        "/api/auth/refresh",
+                        "/api/auth/wechat/url",
+                        "/api/auth/taobao/url",
+                        "/api/auth/phone/send-code")
+                    .permitAll()
+                    .anyRequest()
+                    .authenticated())
+        .addFilterBefore(jwtAuthFilter, UsernamePasswordAuthenticationFilter.class);
+    return http.build();
+  }
 
-    @Bean
-    AuthenticationManager authManager(
-            DaoAuthenticationProvider daoProvider,
-            WechatAuthenticationProvider wechatProvider,
-            TaobaoAuthenticationProvider taobaoProvider,
-            PhoneSmsAuthenticationProvider phoneSmsProvider) {
-        return new ProviderManager(daoProvider, wechatProvider, taobaoProvider, phoneSmsProvider);
-    }
+  @Bean
+  org.springframework.boot.web.servlet.FilterRegistrationBean<JwtAuthFilter>
+      disableContainerRegistration() {
+    var registration =
+        new org.springframework.boot.web.servlet.FilterRegistrationBean<>(jwtAuthFilter);
+    registration.setEnabled(false);
+    return registration;
+  }
+
+  @Bean
+  AuthenticationManager authManager(
+      DaoAuthenticationProvider daoProvider,
+      WechatAuthenticationProvider wechatProvider,
+      TaobaoAuthenticationProvider taobaoProvider,
+      PhoneSmsAuthenticationProvider phoneSmsProvider) {
+    return new ProviderManager(daoProvider, wechatProvider, taobaoProvider, phoneSmsProvider);
+  }
 }

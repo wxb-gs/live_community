@@ -3,6 +3,7 @@ import { getAccessToken } from '../utils/tokenStore';
 interface CurrentUser {
   userId: number;
   username: string;
+  nickname: string;
   avatar: string;
 }
 
@@ -14,6 +15,7 @@ export function useCurrentUser(): CurrentUser | null {
     return {
       userId: Number(payload.sub),
       username: payload.username || '',
+      nickname: payload.nickname || '',
       avatar: payload.avatar || '',
     };
   } catch {

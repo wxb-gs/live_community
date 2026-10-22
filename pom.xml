@@ -1,16 +1,24 @@
-<?xml version="1.0" encoding="UTF-8"?>
-<project xmlns="http://maven.apache.org/POM/4.0.0"
-         xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance"
-         xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
+<?xml version='1.0' encoding='utf-8'?>
+<project xmlns="http://maven.apache.org/POM/4.0.0" xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" xsi:schemaLocation="http://maven.apache.org/POM/4.0.0 https://maven.apache.org/xsd/maven-4.0.0.xsd">
     <modelVersion>4.0.0</modelVersion>
-
     <groupId>com.example</groupId>
     <artifactId>spring-cloud-test</artifactId>
     <version>1.0.0-SNAPSHOT</version>
     <name>spring-cloud-test</name>
     <packaging>pom</packaging>
-
     <modules>
+        <module>common-core</module>
+        <module>comment-api</module>
+        <module>note-api</module>
+        <module>interaction-api</module>
+        <module>upload-api</module>
+        <module>search-api</module>
+        <module>leaf-api</module>
+        <module>security-core</module>
+        <module>service-security</module>
+        <module>event-outbox</module>
+        <module>rpc-security</module>
+        <module>leaf-client</module>
         <module>common</module>
         <module>gateway</module>
         <module>upload-service</module>
@@ -20,7 +28,6 @@
         <module>search-sync-service</module>
         <module>search-service</module>
     </modules>
-
     <properties>
         <java.version>17</java.version>
         <spring-boot.version>3.2.6</spring-boot.version>
@@ -32,7 +39,6 @@
         <maven.compiler.source>${java.version}</maven.compiler.source>
         <maven.compiler.target>${java.version}</maven.compiler.target>
     </properties>
-
     <dependencyManagement>
         <dependencies>
             <dependency>
@@ -83,8 +89,14 @@
             </dependency>
         </dependencies>
     </dependencyManagement>
-
     <build>
+        <plugins>
+            <plugin>
+                <groupId>org.apache.maven.plugins</groupId>
+                <artifactId>maven-surefire-plugin</artifactId>
+                <version>3.2.5</version>
+            </plugin>
+        </plugins>
         <pluginManagement>
             <plugins>
                 <plugin>

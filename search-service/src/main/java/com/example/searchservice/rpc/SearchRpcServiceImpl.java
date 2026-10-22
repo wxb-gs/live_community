@@ -1,40 +1,26 @@
 package com.example.searchservice.rpc;
 
-import com.example.common.NoteSearchRequest;
-import com.example.common.NoteSearchResponse;
-import com.example.common.SearchRpcService;
-import com.example.common.SuggestResponse;
-import com.example.common.UserSearchResponse;
-import com.example.searchservice.service.NoteSearchService;
-import com.example.searchservice.service.SuggestService;
-import com.example.searchservice.service.UserSearchService;
+import com.example.common.*;
+import com.example.searchservice.service.SearchApplicationService;
 import org.apache.dubbo.config.annotation.DubboService;
 
 @DubboService
 public class SearchRpcServiceImpl implements SearchRpcService {
+  private final SearchApplicationService app;
 
-    private final NoteSearchService noteSearchService;
-    private final UserSearchService userSearchService;
-    private final SuggestService suggestService;
+  public SearchRpcServiceImpl(SearchApplicationService app) {
+    this.app = app;
+  }
 
-    public SearchRpcServiceImpl(NoteSearchService noteSearchService, UserSearchService userSearchService, SuggestService suggestService) {
-        this.noteSearchService = noteSearchService;
-        this.userSearchService = userSearchService;
-        this.suggestService = suggestService;
-    }
+  public NoteSearchResponse searchNotes(NoteSearchRequest r) {
+    return app.searchNotes(r);
+  }
 
-    @Override
-    public NoteSearchResponse searchNotes(NoteSearchRequest request) {
-        return noteSearchService.search(request);
-    }
+  public UserSearchResponse searchUsers(String q, int p, int s) {
+    return app.searchUsers(q, p, s);
+  }
 
-    @Override
-    public UserSearchResponse searchUsers(String q, int page, int size) {
-        return userSearchService.search(q, page, size);
-    }
-
-    @Override
-    public SuggestResponse suggest(String q) {
-        return suggestService.suggest(q);
-    }
+  public SuggestResponse suggest(String q) {
+    return app.suggest(q);
+  }
 }

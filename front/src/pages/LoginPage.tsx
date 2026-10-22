@@ -88,7 +88,7 @@ export default function LoginPage() {
   const [smsCode, setSmsCode] = useState('');
   const [sendingCode, setSendingCode] = useState(false);
   const [countdown, setCountdown] = useState(0);
-  const countdownRef = useRef<ReturnType<typeof setInterval>>();
+  const countdownRef = useRef<ReturnType<typeof setInterval> | undefined>(undefined);
 
   // shared state
   const [error, setError] = useState<string | null>(null);

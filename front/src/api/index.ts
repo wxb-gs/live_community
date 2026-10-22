@@ -55,7 +55,7 @@ export async function fetchMyNotes(page: number, size: number): Promise<NoteSumm
 }
 
 export async function fetchNoteDetail(noteId: number): Promise<NoteDetail> {
-  return request<NoteDetail>(`/api/note/detail?noteId=${noteId}`);
+  return request<NoteDetail>(`/api/note/detail?noteId=${noteId}`, { headers: { 'X-View-Id': crypto.randomUUID() } });
 }
 
 export async function createDraft(title: string, content: string): Promise<CreateDraftResponse> {
@@ -65,27 +65,14 @@ export async function createDraft(title: string, content: string): Promise<Creat
   });
 }
 
-export async function getPresignedUrl(
-  fileName: string,
-  contentType: string
-): Promise<PresignedUrlResponse> {
-  return request<PresignedUrlResponse>(
-    `/api/upload/presigned?fileName=${encodeURIComponent(fileName)}&contentType=${encodeURIComponent(contentType)}`
-  );
+export async function prepareUpload(noteId: number, file: File): Promise<PresignedUrlResponse> {
+  return request<PresignedUrlResponse>('/api/upload/prepare', { method: 'POST', body: JSON.stringify({ noteId, fileName: file.name, contentType: file.type, size: file.size }) });
+}
+export async function confirmUpload(fileId: string): Promise<void> {
+  await request('/api/upload/confirm', { method: 'POST', body: JSON.stringify({ fileId }) });
 }
 
-export function toExternalUrl(url: string): string {
-  if (!url) return '';
-  try {
-    const u = new URL(url);
-    if (u.hostname === 'localhost' || u.hostname === '127.0.0.1') {
-      return url;
-    }
-    return '/minio' + u.pathname + u.search;
-  } catch {
-    return url.replace('http://minio:9000', '/minio');
-  }
-}
+export function toExternalUrl(url: string): string { return url || ''; }
 
 export async function uploadToMinio(url: string, file: File): Promise<void> {
   const externalUrl = toExternalUrl(url);
@@ -99,22 +86,40 @@ export async function uploadToMinio(url: string, file: File): Promise<void> {
   }
 }
 
-export async function publishNote(
+export async function publishNote(noteId: number, fileId: string): Promise<NoteDetail> {
+  return request<NoteDetail>('/api/note/publish', { method: 'POST', body: JSON.stringify({ noteId, fileId }) });
+}
+
+export async function addComment(
   noteId: number,
-  fileName: string,
-  contentType: string
-): Promise<NoteDetail> {
-  return request<NoteDetail>('/api/note/publish', {
+  content: string,
+  parentId?: number,
+  rootId?: number
+): Promise<CommentItem> {
+  return request<CommentItem>('/api/note/comment', {
     method: 'POST',
-    body: JSON.stringify({ noteId, fileName, contentType }),
+    body: JSON.stringify({ noteId, content, parentId: parentId ?? 0, rootId: rootId ?? 0 }),
   });
 }
 
-export async function addComment(noteId: number, content: string): Promise<CommentItem> {
-  return request<CommentItem>('/api/note/comment', {
-    method: 'POST',
-    body: JSON.stringify({ noteId, content }),
-  });
+export async function listRootComments(
+  noteId: number,
+  page: number,
+  size: number
+): Promise<CommentItem[]> {
+  return request<CommentItem[]>(
+    `/api/note/comments?noteId=${noteId}&page=${page}&size=${size}`
+  );
+}
+
+export async function listReplies(
+  rootId: number,
+  page: number,
+  size: number
+): Promise<CommentItem[]> {
+  return request<CommentItem[]>(
+    `/api/note/replies?rootId=${rootId}&page=${page}&size=${size}`
+  );
 }
 
 export interface UserInfo {
@@ -224,11 +229,13 @@ export async function phoneLogin(phone: string, smsCode: string): Promise<LoginD
 export async function toggleInteraction(
   interactionType: string,
   targetType: string,
-  targetId: number
+  targetId: number,
+  desiredActive: boolean,
+  requestId = crypto.randomUUID()
 ): Promise<{ active: boolean; count: number; action: string }> {
   return request<{ active: boolean; count: number; action: string }>('/api/interaction/toggle', {
     method: 'POST',
-    body: JSON.stringify({ interactionType, targetType, targetId }),
+    body: JSON.stringify({ interactionType, targetType, targetId, desiredActive, requestId }),
   });
 }
 

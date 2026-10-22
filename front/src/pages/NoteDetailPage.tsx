@@ -1,6 +1,6 @@
 import { useState, useEffect, useCallback } from 'react';
 import { useParams, useNavigate } from 'react-router-dom';
-import { fetchNoteDetail, addComment, toExternalUrl, toggleInteraction } from '../api';
+import { fetchNoteDetail, addComment, listRootComments, toExternalUrl, toggleInteraction } from '../api';
 import { useCurrentUser } from '../hooks/useCurrentUser';
 import type { NoteDetail, CommentItem as CommentType } from '../types';
 import CommentItem from '../components/CommentItem';
@@ -42,11 +42,15 @@ export default function NoteDetailPage() {
   const [loading, setLoading] = useState(true);
   const [error, setError] = useState<string | null>(null);
   const [comments, setComments] = useState<CommentType[]>([]);
+  const [commentPage, setCommentPage] = useState(0);
+  const [hasMoreComments, setHasMoreComments] = useState(false);
+  const [replyTarget, setReplyTarget] = useState<CommentType | null>(null);
   const [liked, setLiked] = useState(false);
   const [likeCount, setLikeCount] = useState(0);
   const [favorited, setFavorited] = useState(false);
   const [favoriteCount, setFavoriteCount] = useState(0);
   const [toggling, setToggling] = useState<string | null>(null);
+
 
   const loadDetail = useCallback(async () => {
     if (!noteId) return;
@@ -55,7 +59,11 @@ export default function NoteDetailPage() {
       setLoading(true);
       const data = await fetchNoteDetail(Number(noteId));
       setNote(data);
+      setLiked(data.liked ?? false);
+      setFavorited(data.favorited ?? false);
       setComments(data.comments || []);
+      setCommentPage(0);
+      setHasMoreComments((data.comments || []).length >= 20);
       setLikeCount(data.likeCount ?? 0);
       setFavoriteCount(data.favoriteCount ?? 0);
     } catch (err) {
@@ -71,15 +79,51 @@ export default function NoteDetailPage() {
 
   const handleAddComment = async (content: string) => {
     if (!noteId) return;
-    const newComment = await addComment(Number(noteId), content);
-    setComments((prev) => [newComment, ...prev]);
+    if (replyTarget) {
+      const newComment = await addComment(
+        Number(noteId), content,
+        replyTarget.commentId,
+        replyTarget.rootId && replyTarget.rootId > 0 ? replyTarget.rootId : replyTarget.commentId
+      );
+      setComments((prev) => {
+        // 如果回复的是根评论，把新回复加到对应根评论的 previewReplies 中
+        const rootId = replyTarget.rootId && replyTarget.rootId > 0 ? replyTarget.rootId : replyTarget.commentId;
+        return prev.map((c) => {
+          if (c.commentId === rootId) {
+            return {
+              ...c,
+              replyCount: (c.replyCount ?? 0) + 1,
+              previewReplies: [...(c.previewReplies ?? []), newComment],
+            };
+          }
+          return c;
+        });
+      });
+      setReplyTarget(null);
+    } else {
+      const newComment = await addComment(Number(noteId), content);
+      setComments((prev) => [newComment, ...prev]);
+    }
+  };
+
+  const handleLoadMoreComments = async () => {
+    if (!noteId) return;
+    const nextPage = commentPage + 1;
+    const more = await listRootComments(Number(noteId), nextPage, 20);
+    if (more.length > 0) {
+      setComments((prev) => [...prev, ...more]);
+      setCommentPage(nextPage);
+      setHasMoreComments(more.length >= 20);
+    } else {
+      setHasMoreComments(false);
+    }
   };
 
   const handleToggle = useCallback(async (type: string) => {
     if (!noteId || toggling) return;
     setToggling(type);
     try {
-      const res = await toggleInteraction(type, 'note', Number(noteId));
+      const res = await toggleInteraction(type, 'note', Number(noteId), type === 'LIKE' ? !liked : !favorited);
       if (type === 'LIKE') {
         setLiked(res.active);
         setLikeCount(res.count);
@@ -92,7 +136,7 @@ export default function NoteDetailPage() {
     } finally {
       setToggling(null);
     }
-  }, [noteId, toggling]);
+  }, [noteId, toggling, liked, favorited]);
 
   if (loading) return <Skeleton />;
 
@@ -225,15 +269,36 @@ export default function NoteDetailPage() {
               )}
             </h2>
 
-            <CommentInput onSubmit={handleAddComment} />
+            <CommentInput
+              onSubmit={handleAddComment}
+              replyTo={replyTarget ? {
+                commentId: replyTarget.commentId,
+                userName: `用户${replyTarget.userId}`,
+              } : undefined}
+              onCancelReply={() => setReplyTarget(null)}
+            />
 
             <div className="mt-4 divide-y divide-gray-50">
               {comments.length === 0 ? (
                 <p className="text-text-muted text-sm text-center py-12">还没有评论，来说点什么吧</p>
               ) : (
-                comments.map((c) => (
-                  <CommentItem key={c.commentId} comment={c} />
-                ))
+                <>
+                  {comments.map((c) => (
+                    <CommentItem
+                      key={c.commentId}
+                      comment={c}
+                      onReply={setReplyTarget}
+                    />
+                  ))}
+                  {hasMoreComments && (
+                    <button
+                      onClick={handleLoadMoreComments}
+                      className="w-full py-3 text-[13px] text-brand font-medium hover:bg-gray-50 rounded-lg transition-colors"
+                    >
+                      加载更多评论
+                    </button>
+                  )}
+                </>
               )}
             </div>
           </div>

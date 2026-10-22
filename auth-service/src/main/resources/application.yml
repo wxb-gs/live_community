@@ -15,16 +15,29 @@ spring:
         enabled: true
       config:
         server-addr: ${NACOS_HOST:localhost}:18848
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    producer:
+      acks: all
+      properties:
+        max.block.ms: 3000
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
   datasource:
-    url: jdbc:mysql://localhost:13306/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
-    username: root
-    password: root
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${AUTH_DB_USER:auth_app}
+    password: ${AUTH_DB_PASSWORD:auth_dev}
   data:
     redis:
-      host: localhost
-      port: 16379
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
 
 dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
   application:
     name: auth-service
   registry:
@@ -34,7 +47,7 @@ dubbo:
     port: 20884
 
 jwt:
-  secret: super-secret-key-change-in-production
+  secret: ${JWT_SECRET:super-secret-key-change-in-production}
 
 wechat:
   app-id: ""

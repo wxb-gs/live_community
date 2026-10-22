@@ -1,43 +1,32 @@
 package com.example.searchsync.config;
 
-import org.apache.kafka.clients.consumer.ConsumerConfig;
-import org.apache.kafka.common.serialization.StringDeserializer;
+import java.util.*;
 import org.springframework.beans.factory.annotation.Value;
-import org.springframework.context.annotation.Bean;
-import org.springframework.context.annotation.Configuration;
-import org.springframework.kafka.annotation.EnableKafka;
+import org.springframework.context.annotation.*;
 import org.springframework.kafka.config.ConcurrentKafkaListenerContainerFactory;
-import org.springframework.kafka.core.ConsumerFactory;
-import org.springframework.kafka.core.DefaultKafkaConsumerFactory;
-import org.springframework.kafka.listener.ContainerProperties;
-
-import java.util.HashMap;
-import java.util.Map;
+import org.springframework.kafka.core.*;
+import org.springframework.kafka.listener.*;
+import org.springframework.util.backoff.FixedBackOff;
 
 @Configuration
-@EnableKafka
 public class KafkaConsumerConfig {
-
-    @Value("${spring.kafka.bootstrap-servers}")
-    private String bootstrapServers;
-
-    @Bean
-    public ConsumerFactory<String, String> consumerFactory() {
-        Map<String, Object> props = new HashMap<>();
-        props.put(ConsumerConfig.BOOTSTRAP_SERVERS_CONFIG, bootstrapServers);
-        props.put(ConsumerConfig.GROUP_ID_CONFIG, "search-sync-group");
-        props.put(ConsumerConfig.KEY_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.VALUE_DESERIALIZER_CLASS_CONFIG, StringDeserializer.class);
-        props.put(ConsumerConfig.ENABLE_AUTO_COMMIT_CONFIG, false);
-        props.put(ConsumerConfig.MAX_POLL_RECORDS_CONFIG, 100);
-        return new DefaultKafkaConsumerFactory<>(props);
-    }
-
-    @Bean
-    public ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory() {
-        ConcurrentKafkaListenerContainerFactory<String, String> factory = new ConcurrentKafkaListenerContainerFactory<>();
-        factory.setConsumerFactory(consumerFactory());
-        factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.MANUAL);
-        return factory;
-    }
+  @Bean
+  ConcurrentKafkaListenerContainerFactory<String, String> kafkaListenerContainerFactory(
+      @Value("${spring.kafka.bootstrap-servers}") String servers) {
+    Map<String, Object> p = new HashMap<>();
+    p.put("bootstrap.servers", servers);
+    p.put("enable.auto.commit", false);
+    p.put("auto.offset.reset", "earliest");
+    p.put("key.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    p.put("value.deserializer", "org.apache.kafka.common.serialization.StringDeserializer");
+    var factory = new ConcurrentKafkaListenerContainerFactory<String, String>();
+    factory.setConsumerFactory(new DefaultKafkaConsumerFactory<>(p));
+    factory.getContainerProperties().setAckMode(ContainerProperties.AckMode.RECORD);
+    // Unlimited retry: a failed record stays uncommitted and is visible as consumer lag.
+    // Repair/replay tooling can resolve poison messages; never silently skip.
+    var error = new DefaultErrorHandler(new FixedBackOff(1000L, FixedBackOff.UNLIMITED_ATTEMPTS));
+    error.setClassifications(Map.of(), true);
+    factory.setCommonErrorHandler(error);
+    return factory;
+  }
 }

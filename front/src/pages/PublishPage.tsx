@@ -1,6 +1,6 @@
 import { useState, useCallback } from 'react';
 import { useNavigate } from 'react-router-dom';
-import { createDraft, publishNote, uploadToMinio } from '../api';
+import { createDraft, publishNote, uploadToMinio, prepareUpload, confirmUpload } from '../api';
 import ImageUploader from '../components/ImageUploader';
 
 export default function PublishPage() {
@@ -45,8 +45,10 @@ export default function PublishPage() {
         return;
       }
 
-      const published = await publishNote(draft.noteId, coverFile!.name, coverFile!.type);
-      await uploadToMinio(published.uploadUrl, coverFile!);
+      const upload = await prepareUpload(draft.noteId, coverFile!);
+      await uploadToMinio(upload.uploadUrl, coverFile!);
+      await confirmUpload(upload.fileId);
+      await publishNote(draft.noteId, upload.fileId);
       setSuccessMsg('发布成功！');
       setTimeout(() => navigate(`/note/${draft.noteId}`), 800);
     } catch (err) {

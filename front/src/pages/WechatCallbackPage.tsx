@@ -14,7 +14,6 @@ export default function WechatCallbackPage() {
     called.current = true;
 
     const code = searchParams.get('code');
-    const state = searchParams.get('state');
 
     if (!code) {
       setError('授权失败：未获取到授权码');

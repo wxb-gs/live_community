@@ -8,6 +8,10 @@ spring:
     import:
       - optional:nacos:shared-infra.yaml?group=COMMON
       - optional:nacos:${spring.application.name}.yaml
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/live_community?useSSL=false&allowPublicKeyRetrieval=true
+    username: ${UPLOAD_DB_USER:upload_app}
+    password: ${UPLOAD_DB_PASSWORD:upload_dev}
   cloud:
     nacos:
       discovery:
@@ -17,12 +21,15 @@ spring:
         server-addr: ${NACOS_HOST:localhost}:18848
 
 minio:
-  endpoint: http://localhost:19000
-  access-key: minioadmin
-  secret-key: minioadmin
+  endpoint: ${MINIO_ENDPOINT:http://localhost:19000}
+  access-key: ${MINIO_ACCESS_KEY:minioadmin}
+  secret-key: ${MINIO_SECRET_KEY:minioadmin}
   bucket: uploads
 
 dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
   application:
     name: upload-service
   registry:
@@ -30,3 +37,6 @@ dubbo:
   protocol:
     name: tri
     port: 20880
+
+jwt:
+  secret: ${JWT_SECRET:super-secret-key-change-in-production}

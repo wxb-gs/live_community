@@ -16,4 +16,4 @@ CREATE TABLE IF NOT EXISTS `leaf_alloc` (
 INSERT INTO `leaf_alloc` (`biz_tag`, `max_id`, `step`, `description`) VALUES
 ('note', 1, 1000, 'Note ID segment'),
 ('comment', 1, 1000, 'Comment ID segment')
-ON DUPLICATE KEY UPDATE `max_id` = VALUES(`max_id`);
+ON DUPLICATE KEY UPDATE `biz_tag` = VALUES(`biz_tag`);

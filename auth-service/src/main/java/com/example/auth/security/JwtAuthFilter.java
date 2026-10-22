@@ -1,79 +1,49 @@
 package com.example.auth.security;
 
-import io.jsonwebtoken.Claims;
-import io.jsonwebtoken.JwtException;
-import io.jsonwebtoken.Jwts;
-import org.slf4j.Logger;
-import org.slf4j.LoggerFactory;
+import com.example.security.JwtTokens;
+import jakarta.servlet.*;
+import jakarta.servlet.http.*;
+import java.io.IOException;
+import java.util.Set;
 import org.springframework.beans.factory.annotation.Value;
 import org.springframework.security.core.context.SecurityContextHolder;
 import org.springframework.stereotype.Component;
 import org.springframework.web.filter.OncePerRequestFilter;
 
-import javax.crypto.SecretKey;
-import javax.crypto.spec.SecretKeySpec;
-import jakarta.servlet.FilterChain;
-import jakarta.servlet.ServletException;
-import jakarta.servlet.http.HttpServletRequest;
-import jakarta.servlet.http.HttpServletResponse;
-import java.io.IOException;
-import java.nio.charset.StandardCharsets;
-import java.util.Base64;
-
 @Component
 public class JwtAuthFilter extends OncePerRequestFilter {
+  private final String secret;
 
-    private static final Logger log = LoggerFactory.getLogger(JwtAuthFilter.class);
+  public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
+    this.secret = secret;
+  }
 
-    private final SecretKey secretKey;
+  private static final Set<String> PUBLIC =
+      Set.of(
+          "/api/auth/register",
+          "/api/auth/login",
+          "/api/auth/refresh",
+          "/api/auth/wechat/url",
+          "/api/auth/taobao/url",
+          "/api/auth/phone/send-code");
 
-    public JwtAuthFilter(@Value("${jwt.secret}") String secret) {
-        byte[] keyBytes = Base64.getEncoder().encode(secret.getBytes(StandardCharsets.UTF_8));
-        this.secretKey = new SecretKeySpec(keyBytes, "HmacSHA256");
+  @Override
+  protected void doFilterInternal(
+      HttpServletRequest req, HttpServletResponse res, FilterChain chain)
+      throws IOException, ServletException {
+    if (PUBLIC.contains(req.getRequestURI())) {
+      chain.doFilter(req, res);
+      return;
     }
-
-    @Override
-    protected void doFilterInternal(HttpServletRequest request,
-                                    HttpServletResponse response,
-                                    FilterChain chain) throws ServletException, IOException {
-        String path = request.getRequestURI();
-        if (path.startsWith("/api/auth/register") || path.startsWith("/api/auth/login")
-                || path.startsWith("/api/auth/wechat/") || path.startsWith("/api/auth/taobao/")
-                || path.startsWith("/api/auth/phone/") || path.startsWith("/api/auth/refresh")) {
-            chain.doFilter(request, response);
-            return;
-        }
-
-        String header = request.getHeader("Authorization");
-        if (header == null || !header.startsWith("Bearer ")) {
-            sendError(response, 401, "缺少认证 Token");
-            return;
-        }
-
-        try {
-            String token = header.substring(7);
-            Claims claims = Jwts.parser()
-                    .verifyWith(secretKey)
-                    .build()
-                    .parseSignedClaims(token)
-                    .getPayload();
-
-            Long userId = Long.parseLong(claims.get("sub", String.class));
-            String username = claims.get("username", String.class);
-
-            JwtAuthenticationToken auth = new JwtAuthenticationToken(userId, username);
-            SecurityContextHolder.getContext().setAuthentication(auth);
-
-            chain.doFilter(request, response);
-        } catch (JwtException e) {
-            log.warn("JWT validation failed: {}", e.getMessage());
-            sendError(response, 401, "Token 无效或已过期");
-        }
+    try {
+      long id = JwtTokens.userId(secret, req.getHeader("Authorization"));
+      SecurityContextHolder.getContext().setAuthentication(new JwtAuthenticationToken(id, ""));
+    } catch (RuntimeException e) {
+      res.setStatus(401);
+      res.setContentType("application/json;charset=UTF-8");
+      res.getWriter().write("{\"code\":401,\"msg\":\"Unauthorized\"}");
+      return;
     }
-
-    private void sendError(HttpServletResponse response, int code, String msg) throws IOException {
-        response.setStatus(code);
-        response.setContentType("application/json;charset=UTF-8");
-        response.getWriter().write("{\"code\":" + code + ",\"msg\":\"" + msg + "\"}");
-    }
+    chain.doFilter(req, res);
+  }
 }

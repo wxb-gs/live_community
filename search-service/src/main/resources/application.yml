@@ -17,6 +17,9 @@ spring:
         server-addr: ${NACOS_HOST:localhost}:18848
 
 dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
   application:
     name: search-service
     qos-enable: false
@@ -29,3 +32,6 @@ dubbo:
 elasticsearch:
   host: ${ES_HOST:localhost}
   port: ${ES_PORT:9200}
+
+jwt:
+  secret: ${JWT_SECRET:super-secret-key-change-in-production}

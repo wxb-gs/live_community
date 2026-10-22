@@ -377,26 +377,17 @@ def get_image_info(image_path):
 
 
 def publish_and_upload(token, note_id, image_path):
-    """发布笔记并上传封面图到 note-service 返回的 presigned URL"""
+    """Prepare, upload, confirm immutable file, then publish."""
     file_name, content_type = get_image_info(image_path)
-
-    # 发布笔记，获取 note-service 生成的 presigned PUT URL
-    r = requests.post(f"{BASE_URL}/api/note/publish",
-        headers={"Authorization": f"Bearer {token}"},
-        json={"noteId": note_id, "fileName": file_name, "contentType": content_type},
-        timeout=10)
-    if r.status_code != 200:
-        print(f"  发布笔记失败: {r.status_code} {r.text[:100]}")
-        return False
-
-    upload_url = r.json()["data"]["uploadUrl"]
-
-    # 上传文件到 note-service 指定的 MinIO 路径
+    headers = {"Authorization": f"Bearer {token}"}
+    r = requests.post(f"{BASE_URL}/api/upload/prepare", headers=headers,
+        json={"noteId": note_id, "fileName": file_name, "contentType": content_type, "size": os.path.getsize(image_path)}, timeout=10)
+    r.raise_for_status()
+    upload = r.json()["data"]
     with open(image_path, "rb") as f:
-        r2 = requests.put(upload_url, data=f, headers={"Content-Type": content_type}, timeout=60)
-    if not r2.ok:
-        print(f"  上传封面图失败: {r2.status_code}")
-        return False
+        requests.put(upload["uploadUrl"], data=f, headers={"Content-Type": content_type}, timeout=60).raise_for_status()
+    requests.post(f"{BASE_URL}/api/upload/confirm", headers=headers, json={"fileId": upload["fileId"]}, timeout=30).raise_for_status()
+    requests.post(f"{BASE_URL}/api/note/publish", headers=headers, json={"noteId": note_id, "fileId": upload["fileId"]}, timeout=10).raise_for_status()
     return True
 
 
