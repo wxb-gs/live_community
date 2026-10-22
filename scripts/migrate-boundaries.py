@@ -3,6 +3,7 @@
 import argparse, json, os, re, time, uuid
 from pathlib import Path
 import pymysql
+from project_layout import module_path
 ROOT=Path(__file__).resolve().parents[1]
 def connect():
  return pymysql.connect(host=os.getenv('MYSQL_HOST','localhost'),port=int(os.getenv('MYSQL_PORT','13306')),user=os.getenv('MIGRATION_DB_USER','root'),password=os.environ['MIGRATION_DB_PASSWORD'],database='live_community',charset='utf8mb4',autocommit=False,cursorclass=pymysql.cursors.DictCursor)
@@ -19,8 +20,8 @@ def main():
  if not args.maintenance_confirmed:p.error('Stop old writers and consumers, back up MySQL and Redis, then pass --maintenance-confirmed')
  with connect() as db:
   with db.cursor() as c:
-   for path in ['leaf-service/src/main/resources/sql/init_leaf.sql','auth-service/src/main/resources/sql/init_auth.sql','note-service/src/main/resources/sql/init_comment_mysql.sql','note-service/src/main/resources/sql/init_interaction_mysql.sql','scripts/sql/service-boundaries.sql']:
-    execute_file(c,ROOT/path)
+   for path in [module_path('leaf-service')/'src/main/resources/sql/init_leaf.sql',module_path('auth-service')/'src/main/resources/sql/init_auth.sql',module_path('note-service')/'src/main/resources/sql/init_comment_mysql.sql',module_path('note-service')/'src/main/resources/sql/init_interaction_mysql.sql',ROOT/'scripts/sql/service-boundaries.sql']:
+    execute_file(c,path)
    columns={'file_metadata':{'temp_removed':'TINYINT NOT NULL DEFAULT 0'},'note':{'file_id':'VARCHAR(36) NULL','version':'BIGINT NOT NULL DEFAULT 1','like_version':'BIGINT NOT NULL DEFAULT 0'},'comment_index':{'like_version':'BIGINT NOT NULL DEFAULT 0'},'user_info':{'version':'BIGINT NOT NULL DEFAULT 1'}}
    for table,fields in columns.items():
     c.execute('SELECT COLUMN_NAME FROM information_schema.columns WHERE table_schema=DATABASE() AND table_name=%s',(table,));present={row['COLUMN_NAME'] for row in c.fetchall()}

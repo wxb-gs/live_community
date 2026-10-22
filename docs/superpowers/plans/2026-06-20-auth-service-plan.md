@@ -299,7 +299,7 @@ public class AuthServiceApplication {
 
 - [ ] **Step 4: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 5: Commit**
@@ -488,7 +488,7 @@ public class UserWechatRepository {
 
 - [ ] **Step 5: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 6: Commit**
@@ -649,7 +649,7 @@ public class SecurityBeansConfig {
 
 - [ ] **Step 4: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 5: Commit**
@@ -760,7 +760,7 @@ public class TokenService {
 
 - [ ] **Step 2: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 3: Commit**
@@ -947,7 +947,7 @@ public class WechatAuthService {
 
 - [ ] **Step 4: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 5: Commit**
@@ -1082,7 +1082,7 @@ public class WechatAuthenticationProvider implements AuthenticationProvider {
 
 - [ ] **Step 4: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 5: Commit**
@@ -1157,7 +1157,7 @@ public class AuthSecurityConfig {
 
 - [ ] **Step 2: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 3: Commit**
@@ -1417,7 +1417,7 @@ public class AuthController {
 
 - [ ] **Step 3: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 4: Commit**
@@ -1472,7 +1472,7 @@ public Result<LoginResponse> register(@RequestBody RegisterRequest req) {
 
 - [ ] **Step 2: 验证编译**
 
-Run: `mvn compile -pl auth-service -am`
+Run: `mvn compile -pl :auth-service -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 3: Commit**
@@ -1533,7 +1533,7 @@ jwt:
 
 - [ ] **Step 4: 验证编译**
 
-Run: `mvn compile -pl gateway -am`
+Run: `mvn compile -pl :gateway -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 5: Commit**
@@ -1593,7 +1593,7 @@ public class GatewaySecurityConfig {
 
 - [ ] **Step 2: 验证编译**
 
-Run: `mvn compile -pl gateway -am`
+Run: `mvn compile -pl :gateway -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 3: Commit**
@@ -1686,7 +1686,7 @@ public Result<PresignedUrlResponse> presignedUrl(
 
 - [ ] **Step 3: 验证编译**
 
-Run: `mvn compile -pl gateway -am`
+Run: `mvn compile -pl :gateway -am`
 Expected: BUILD SUCCESS。
 
 - [ ] **Step 4: Commit**

@@ -7,6 +7,28 @@
 ![架构图](./assets/imgs/架构功能图.png)
 
 
+## 目录与服务划分
+
+```text
+gateway/                 HTTP 网关
+services/
+  account/               账号与认证（auth-service）
+  community/             笔记、评论、互动（community-api + note-service）
+  media/                 文件与对象存储（upload-api + upload-service）
+  search/                搜索域（search-api + 查询服务 + 同步 Worker）
+platform/
+  common-core/           无框架基础类型
+  security/              JWT、HTTP 安全与内部 RPC 安全
+  messaging/             事务 Outbox
+  id/                    Leaf API、客户端与发号服务
+front/                   前端
+deploy/                  Elasticsearch 镜像与 Canal 演示配置
+scripts/                 启动、迁移、对账和结构检查
+docs/                    设计与运维文档
+```
+
+7 个可部署进程分别是网关、账号、社区、媒体、搜索查询、搜索同步、Leaf。`*-api` 和平台客户端是库；各层 `pom.xml` 负责聚合构建。详细职责、依赖方向和新增模块规则见 [项目结构与服务边界](docs/项目结构与服务边界.md)。
+
 ## 技术栈
 
 | 层级 | 技术 |
@@ -64,7 +86,7 @@ Spring Cloud Gateway 通过 Nacos 发现下游，转发 `/api/auth/**`、`/api/n
 ## 快速开始
 
 ### 环境要求
-JDK 17+ · Docker Desktop · Maven 3.6+ · Node 18+
+JDK 17+ · Docker Desktop · Maven 3.6+ · Node 18+ · Python 3.10+
 
 ### 1. 启动基础设施
 ```bash
@@ -76,25 +98,26 @@ docker compose up -d
 
 ### 2. 初始化
 ```bash
-cd scripts && bash init-all.sh
+bash scripts/init-all.sh
 ```
 注册 Nacos 配置 → 创建 ES 索引 (IK 分词) → 写入测试数据。
 
 ### 3. 启动后端
 ```bash
-bash start-all.sh
+bash scripts/start-all.sh
 ```
 按依赖顺序启动：leaf → upload → note → auth → search → search-sync → gateway。
 
 ```bash
-# 或逐个模块启动
-mvn -pl leaf-service spring-boot:run &
-mvn -pl upload-service spring-boot:run &
-mvn -pl note-service spring-boot:run &
-mvn -pl auth-service spring-boot:run &
-mvn -pl search-service spring-boot:run &
-mvn -pl search-sync-service spring-boot:run &
-mvn -pl gateway spring-boot:run &
+# 或先安装父 POM 与契约，再逐个模块启动
+mvn install -DskipTests
+mvn -pl :leaf-service spring-boot:run &
+mvn -pl :upload-service spring-boot:run &
+mvn -pl :note-service spring-boot:run &
+mvn -pl :auth-service spring-boot:run &
+mvn -pl :search-service spring-boot:run &
+mvn -pl :search-sync-service spring-boot:run &
+mvn -pl :gateway spring-boot:run &
 ```
 
 ### 4. 启动前端

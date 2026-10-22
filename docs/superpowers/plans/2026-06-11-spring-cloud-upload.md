@@ -308,7 +308,7 @@ minio:
 
 - [ ] **Step 5: Compile the module**
 
-Run: `mvn -pl upload-service compile`
+Run: `mvn -pl :upload-service compile`
 
 ---
 
@@ -437,7 +437,7 @@ class UploadControllerTest {
 
 - [ ] **Step 3: Run tests to verify they fail (no MinIO server)**
 
-Run: `mvn -pl upload-service test`
+Run: `mvn -pl :upload-service test`
 Expected: Tests may fail because MinIO is not running locally — this is expected at this stage. The controller wiring is verified when MinIO is available.
 
 ---
@@ -551,7 +551,7 @@ spring:
 
 - [ ] **Step 4: Compile the gateway module**
 
-Run: `mvn -pl gateway compile`
+Run: `mvn -pl :gateway compile`
 
 ---
 

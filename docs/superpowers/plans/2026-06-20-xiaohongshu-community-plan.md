@@ -40,7 +40,7 @@ public interface NoteRepository extends CassandraRepository<NoteEntity, Long> {
 - [ ] **Step 2: 编译验证**
 
 ```bash
-mvn compile -pl note-service
+mvn compile -pl :note-service
 ```
 Expected: BUILD SUCCESS
 
@@ -149,7 +149,7 @@ import java.util.List;
 - [ ] **Step 3: 编译验证**
 
 ```bash
-mvn compile -pl gateway
+mvn compile -pl :gateway
 ```
 Expected: BUILD SUCCESS
 

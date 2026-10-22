@@ -30,10 +30,16 @@ echo "============================================================"
 echo "  STEP 1/4: Starting infrastructure (Docker)"
 echo "============================================================"
 bash "$SCRIPT_DIR/start-infra.sh"
+python "$SCRIPT_DIR/project_layout.py" --check
 
 # ============================================================
 # 2. Build
 # ============================================================
+if $INFRA_ONLY; then
+  echo "Infrastructure only — done."
+  exit 0
+fi
+
 if $BUILD; then
   echo ""
   echo "============================================================"
@@ -47,11 +53,6 @@ else
   echo "  (skipping build — --no-build flag)"
 fi
 
-if $INFRA_ONLY; then
-  echo ""
-  echo "=== Infrastructure only — done ==="
-  exit 0
-fi
 
 # ============================================================
 # 3. Init ES indices (first time only, idempotent)
@@ -78,7 +79,9 @@ run_service() {
   local module=$1
   local name=$2
   echo "  starting $name ($module) ..."
-  local jar="$PROJECT_DIR/$module/target/$module-1.0.0-SNAPSHOT.jar"
+  local module_path
+  module_path=$(python "$SCRIPT_DIR/project_layout.py" --service-path "$module")
+  local jar="$PROJECT_DIR/$module_path/target/$module-1.0.0-SNAPSHOT.jar"
   test -f "$jar" || { echo "Missing $jar; run a full build first"; exit 1; }
   nohup java -jar "$jar" > "$LOGDIR/$name.log" 2>&1 &
   echo $! > "$LOGDIR/$name.pid"
