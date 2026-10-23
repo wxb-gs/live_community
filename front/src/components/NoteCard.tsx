@@ -29,11 +29,12 @@ export default function NoteCard({ note, index = 0 }: Props) {
   const navigate = useNavigate();
   const initial = getInitialChar(note.title);
 
-  const [liked, setLiked] = useState(false);
+  const [liked, setLiked] = useState(note.liked ?? false);
   const [likeCount, setLikeCount] = useState(note.likeCount ?? 0);
-  const [favorited, setFavorited] = useState(false);
+  const [favorited, setFavorited] = useState(note.favorited ?? false);
   const [favoriteCount, setFavoriteCount] = useState(note.favoriteCount ?? 0);
   const [toggling, setToggling] = useState<string | null>(null);
+
   const [imgError, setImgError] = useState(false);
 
   const handleToggle = useCallback(async (e: React.MouseEvent, type: string) => {
@@ -42,7 +43,7 @@ export default function NoteCard({ note, index = 0 }: Props) {
     if (toggling) return;
     setToggling(type);
     try {
-      const res = await toggleInteraction(type, 'note', note.noteId);
+      const res = await toggleInteraction(type, 'note', note.noteId, type === 'LIKE' ? !liked : !favorited);
       if (type === 'LIKE') {
         setLiked(res.active);
         setLikeCount(res.count);
@@ -55,7 +56,7 @@ export default function NoteCard({ note, index = 0 }: Props) {
     } finally {
       setToggling(null);
     }
-  }, [note.noteId, toggling]);
+  }, [note.noteId, toggling, liked, favorited]);
 
   return (
     <article

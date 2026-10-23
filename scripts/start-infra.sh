@@ -30,11 +30,6 @@ echo -n "  redis ... "
 until docker exec redis redis-cli ping 2>/dev/null | grep -q PONG; do sleep 2; done
 echo "OK"
 
-# ---- cassandra ----
-echo -n "  cassandra (may take ~60s) ... "
-until docker exec cassandra cqlsh -e "DESCRIBE KEYSPACES" localhost 9042 > /dev/null 2>&1; do sleep 5; done
-echo "OK"
-
 # ---- minio ----
 echo -n "  minio ... "
 until curl -sf http://localhost:19000/minio/health/live > /dev/null 2>&1; do sleep 2; done
@@ -50,12 +45,6 @@ echo -n "  elasticsearch ... "
 until curl -sf http://localhost:9200/_cluster/health > /dev/null 2>&1; do sleep 2; done
 echo "OK"
 
-# ---- canal-server ----
-echo -n "  canal-server ... "
-# Canal uses a custom TCP protocol, not HTTP — check port connectivity instead
-	until timeout 2 bash -c "echo >/dev/tcp/localhost/11111" 2>/dev/null; do sleep 3; done
-echo "OK"
-
 echo ""
-echo "=== All infrastructure is healthy ==="
+echo "=== Required infrastructure is healthy ==="
 docker compose ps

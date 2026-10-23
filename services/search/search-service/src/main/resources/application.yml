@@ -1,0 +1,37 @@
+server:
+  port: 8086
+
+spring:
+  application:
+    name: search-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
+
+dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
+  application:
+    name: search-service
+    qos-enable: false
+  registry:
+    address: nacos://${NACOS_HOST:localhost}:18848
+  protocol:
+    name: tri
+    port: 20886
+
+elasticsearch:
+  host: ${ES_HOST:localhost}
+  port: ${ES_PORT:9200}
+
+jwt:
+  secret: ${JWT_SECRET:super-secret-key-change-in-production}

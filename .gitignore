@@ -76,3 +76,6 @@ logs/
 *.pid
 
 .claude
+# Python operational tools
+__pycache__/
+*.pyc

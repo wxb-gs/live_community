@@ -3,15 +3,19 @@
 # Initialize Elasticsearch indices with IK analyzer
 # Requires: IK plugin installed on ES
 # ============================================================
-set -e
+set -euo pipefail
 
 ES_URL="${ES_URL:-http://localhost:9200}"
 
 echo "=== Creating ES indices ==="
 
 # ---- notes index ----
+if curl -sf "$ES_URL/notes" >/dev/null; then
+  echo "notes already exists; preserving it"
+else
 echo "Creating 'notes' index..."
-curl -sf -X PUT "$ES_URL/notes" -H 'Content-Type: application/json' -d '{
+curl -sf -X PUT "$ES_URL/notes_v1" -H 'Content-Type: application/json' -d '{
+  "aliases": { "notes": {} },
   "settings": {
     "number_of_shards": 1,
     "number_of_replicas": 0,
@@ -49,11 +53,16 @@ curl -sf -X PUT "$ES_URL/notes" -H 'Content-Type: application/json' -d '{
     }
   }
 }' | tee /dev/null
+fi
 echo ""
 
 # ---- users index ----
+if curl -sf "$ES_URL/users" >/dev/null; then
+  echo "users already exists; preserving it"
+else
 echo "Creating 'users' index..."
-curl -sf -X PUT "$ES_URL/users" -H 'Content-Type: application/json' -d '{
+curl -sf -X PUT "$ES_URL/users_v1" -H 'Content-Type: application/json' -d '{
+  "aliases": { "users": {} },
   "settings": {
     "number_of_shards": 1,
     "number_of_replicas": 0,
@@ -77,6 +86,7 @@ curl -sf -X PUT "$ES_URL/users" -H 'Content-Type: application/json' -d '{
     }
   }
 }' | tee /dev/null
+fi
 echo ""
 
 echo "=== Indices created ==="

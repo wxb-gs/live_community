@@ -154,7 +154,7 @@ export default function ProfilePage() {
     );
   }
 
-  const avatarChar = (user.nickname || user.username).charAt(0).toUpperCase();
+  const avatarChar = (user.nickname || user.username || "?").charAt(0).toUpperCase();
   const displayName = user.nickname || user.username;
 
   return (

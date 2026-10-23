@@ -152,7 +152,7 @@ Add inside `<dependencies>`:
 - [ ] **Step 2: Verify dependency resolution**
 
 ```bash
-mvn dependency:resolve -pl upload-service -q
+mvn dependency:resolve -pl :upload-service -q
 ```
 
 ---
@@ -257,7 +257,7 @@ dubbo:
 - [ ] **Step 4: Compile upload-service**
 
 ```bash
-mvn compile -pl upload-service
+mvn compile -pl :upload-service
 ```
 
 ---
@@ -304,7 +304,7 @@ Replace the entire `<dependencies>` block:
 - [ ] **Step 2: Verify dependency resolution**
 
 ```bash
-mvn dependency:resolve -pl gateway -q
+mvn dependency:resolve -pl :gateway -q
 ```
 
 ---
@@ -415,7 +415,7 @@ Expected: BUILD SUCCESS, no errors.
 - [ ] **Step 2: Run existing tests (upload-service HTTP controller tests should still pass)**
 
 ```bash
-mvn test -pl upload-service
+mvn test -pl :upload-service
 ```
 
 Expected: Tests pass (requires MinIO running on localhost:9000).

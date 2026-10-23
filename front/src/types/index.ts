@@ -9,6 +9,8 @@ export interface NoteSummary {
   updatedAt: number;
   likeCount?: number;
   favoriteCount?: number;
+  liked?: boolean;
+  favorited?: boolean;
 }
 
 export interface CommentItem {
@@ -18,6 +20,18 @@ export interface CommentItem {
   content: string;
   createdAt: number;
   likeCount?: number;
+  /** 根评论ID，0 表示自身为根 */
+  rootId?: number;
+  /** 直接父评论ID */
+  parentId?: number;
+  /** 楼层号 */
+  floor?: number;
+  /** 子回复总数 */
+  replyCount?: number;
+  /** 状态 0:正常 1:隐藏 2:删除 */
+  state?: number;
+  /** 前N条子回复预览 */
+  previewReplies?: CommentItem[];
 }
 
 export interface NoteDetail {
@@ -34,6 +48,8 @@ export interface NoteDetail {
   updatedAt: number;
   likeCount?: number;
   favoriteCount?: number;
+  liked?: boolean;
+  favorited?: boolean;
   comments: CommentItem[];
 }
 
@@ -49,6 +65,7 @@ export interface CreateDraftResponse {
 }
 
 export interface PresignedUrlResponse {
+  fileId: string;
   uploadUrl: string;
   objectKey: string;
   expiresAt: number;

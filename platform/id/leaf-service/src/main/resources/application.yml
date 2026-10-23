@@ -1,0 +1,39 @@
+server:
+  port: 8082
+
+spring:
+  application:
+    name: leaf-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${LEAF_DB_USER:leaf_app}
+    password: ${LEAF_DB_PASSWORD:leaf_dev}
+    driver-class-name: com.mysql.cj.jdbc.Driver
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
+
+dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
+  application:
+    name: leaf-service
+  registry:
+    address: nacos://${NACOS_HOST:localhost}:18848
+  protocol:
+    name: tri
+    port: 20881
+
+leaf:
+  snowflake:
+    worker-id: 1
+    datacenter-id: 1

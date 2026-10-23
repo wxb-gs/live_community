@@ -4,7 +4,7 @@
 #
 # Usage:
 #   ./scripts/start-all.sh            # start all
-#   ./scripts/start-all.sh --no-build # skip mvn compile
+#   ./scripts/start-all.sh --no-build # use existing packaged jars
 # ============================================================
 set -e
 
@@ -30,27 +30,29 @@ echo "============================================================"
 echo "  STEP 1/4: Starting infrastructure (Docker)"
 echo "============================================================"
 bash "$SCRIPT_DIR/start-infra.sh"
+python "$SCRIPT_DIR/project_layout.py" --check
 
 # ============================================================
 # 2. Build
 # ============================================================
+if $INFRA_ONLY; then
+  echo "Infrastructure only — done."
+  exit 0
+fi
+
 if $BUILD; then
   echo ""
   echo "============================================================"
   echo "  STEP 2/4: Building all modules"
   echo "============================================================"
-  mvn compile -q
+  (cd front && npm run build)
+  mvn install -q -DskipTests
   echo "Build done."
 else
   echo ""
   echo "  (skipping build — --no-build flag)"
 fi
 
-if $INFRA_ONLY; then
-  echo ""
-  echo "=== Infrastructure only — done ==="
-  exit 0
-fi
 
 # ============================================================
 # 3. Init ES indices (first time only, idempotent)
@@ -59,7 +61,7 @@ echo ""
 echo "============================================================"
 echo "  STEP 3/4: Initializing ES indices"
 echo "============================================================"
-bash "$SCRIPT_DIR/init-es.sh" 2>/dev/null || echo "  (indices may already exist — ignoring error)"
+bash "$SCRIPT_DIR/init-es.sh"
 
 # ============================================================
 # 4. Start Java services (in dependency order)
@@ -77,7 +79,11 @@ run_service() {
   local module=$1
   local name=$2
   echo "  starting $name ($module) ..."
-  nohup mvn -pl "$module" spring-boot:run -q > "$LOGDIR/$name.log" 2>&1 &
+  local module_path
+  module_path=$(python "$SCRIPT_DIR/project_layout.py" --service-path "$module")
+  local jar="$PROJECT_DIR/$module_path/target/$module-1.0.0-SNAPSHOT.jar"
+  test -f "$jar" || { echo "Missing $jar; run a full build first"; exit 1; }
+  nohup java -jar "$jar" > "$LOGDIR/$name.log" 2>&1 &
   echo $! > "$LOGDIR/$name.pid"
   echo "    pid=$(cat $LOGDIR/$name.pid)  log=$LOGDIR/$name.log"
 }
@@ -127,10 +133,8 @@ echo "    Nacos      http://localhost:18848"
 echo "    MySQL      localhost:13306"
 echo "    Redis      localhost:16379"
 echo "    MinIO      http://localhost:19000 (console :19001)"
-echo "    Cassandra  localhost:19042"
 echo "    Kafka      localhost:9092"
 echo "    ES         http://localhost:9200"
-echo "    Canal      localhost:11111"
 echo ""
 echo "  Frontend (Vite):  cd front && npm run dev"
 echo ""

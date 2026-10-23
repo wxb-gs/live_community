@@ -1,0 +1,59 @@
+package com.example.searchservice.adapter.http;
+
+import com.example.common.*;
+import com.example.searchservice.application.SearchApplicationService;
+import java.util.HashMap;
+import java.util.Map;
+import org.springframework.web.bind.annotation.*;
+
+@RestController
+@RequestMapping("/api/search")
+public class SearchController {
+
+  private final SearchApplicationService searchRpcService;
+
+  public SearchController(SearchApplicationService service) {
+    this.searchRpcService = service;
+  }
+
+  @GetMapping("/note")
+  public Result<NoteSearchResponse> searchNotes(
+      @RequestParam String q,
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "20") int size,
+      @RequestParam(required = false) String category,
+      @RequestParam(defaultValue = "relevance") String sort) {
+    NoteSearchRequest req = new NoteSearchRequest(q, page, size, category, sort);
+    NoteSearchResponse resp = searchRpcService.searchNotes(req);
+    return Result.ok(resp);
+  }
+
+  @GetMapping("/user")
+  public Result<UserSearchResponse> searchUsers(
+      @RequestParam String q,
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    UserSearchResponse resp = searchRpcService.searchUsers(q, page, size);
+    return Result.ok(resp);
+  }
+
+  @GetMapping("/all")
+  public Result<Map<String, Object>> searchAll(
+      @RequestParam String q,
+      @RequestParam(defaultValue = "1") int page,
+      @RequestParam(defaultValue = "20") int size) {
+    NoteSearchRequest noteReq = new NoteSearchRequest(q, page, size, null, "relevance");
+    NoteSearchResponse notes = searchRpcService.searchNotes(noteReq);
+    UserSearchResponse users = searchRpcService.searchUsers(q, page, size);
+    Map<String, Object> combined = new HashMap<>();
+    combined.put("notes", notes);
+    combined.put("users", users);
+    return Result.ok(combined);
+  }
+
+  @GetMapping("/suggest")
+  public Result<SuggestResponse> suggest(@RequestParam String q) {
+    SuggestResponse resp = searchRpcService.suggest(q);
+    return Result.ok(resp);
+  }
+}

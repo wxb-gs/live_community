@@ -1,5 +1,8 @@
 # Elasticsearch 入门指南
 
+> 当前实现已调整为普通 HTTP 网关、服务间 Dubbo、MySQL 评论与互动、Outbox 搜索同步。本文保留历史教学示例；实际启动、迁移及验证请以 [微服务修复实施与部署](微服务修复实施与部署.md) 为准。
+
+
 ## 1. 什么是 Elasticsearch
 
 Elasticsearch（简称 ES）是一个**分布式实时搜索与分析引擎**，基于 Apache Lucene 构建。它可以对海量数据进行近实时的全文搜索、结构化搜索和分析。

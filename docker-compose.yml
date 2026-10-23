@@ -42,8 +42,11 @@ services:
       - "13306:3306"
     volumes:
       - mysql-data:/var/lib/mysql
-      - ./leaf-service/src/main/resources/sql/init_leaf.sql:/docker-entrypoint-initdb.d/01-init-leaf.sql
-      - ./auth-service/src/main/resources/sql/init_auth.sql:/docker-entrypoint-initdb.d/02-init-auth.sql
+      - ./platform/id/leaf-service/src/main/resources/sql/init_leaf.sql:/docker-entrypoint-initdb.d/01-init-leaf.sql
+      - ./services/account/auth-service/src/main/resources/sql/init_auth.sql:/docker-entrypoint-initdb.d/02-init-auth.sql
+      - ./services/community/note-service/src/main/resources/sql/init_comment_mysql.sql:/docker-entrypoint-initdb.d/03-comments.sql
+      - ./services/community/note-service/src/main/resources/sql/init_interaction_mysql.sql:/docker-entrypoint-initdb.d/04-interactions.sql
+      - ./scripts/sql/service-boundaries.sql:/docker-entrypoint-initdb.d/05-boundaries.sql
     healthcheck:
       test: mysqladmin ping -h localhost -u root -proot
       interval: 10s
@@ -52,23 +55,6 @@ services:
     networks:
       - live-community
 
-  cassandra:
-    image: cassandra:latest
-    container_name: cassandra
-    environment:
-      CASSANDRA_CLUSTER_NAME: live-community
-    ports:
-      - "19042:9042"
-    volumes:
-      - cassandra-data:/var/lib/cassandra
-    healthcheck:
-      test: cqlsh -e "DESCRIBE KEYSPACES" localhost 9042
-      interval: 15s
-      timeout: 10s
-      retries: 30
-      start_period: 60s
-    networks:
-      - live-community
 
   # ==================== Cache & Message Queue ====================
 
@@ -153,8 +139,8 @@ services:
 
   elasticsearch:
     build:
-      context: .
-      dockerfile: Dockerfile.es
+      context: ./deploy/elasticsearch
+      dockerfile: Dockerfile
     image: live-community/elasticsearch-ik:8.12.0
     container_name: elasticsearch
     environment:
@@ -172,13 +158,14 @@ services:
       - live-community
 
   canal-server:
+    profiles: ["canal-demo"]
     image: canal/canal-server:v1.1.8
     container_name: canal-server
     ports:
       - "11111:11111"
     volumes:
-      - ./scripts/canal.properties:/home/admin/canal-server/conf/canal.properties:ro
-      - ./scripts/canal-instance.properties:/home/admin/canal-server/conf/example/instance.properties:ro
+      - ./deploy/canal/canal.properties:/home/admin/canal-server/conf/canal.properties:ro
+      - ./deploy/canal/instance.properties:/home/admin/canal-server/conf/example/instance.properties:ro
     environment:
       CANAL_ADDRESS: canal-server
       CANAL_PORT: 11111
@@ -204,4 +191,3 @@ networks:
 volumes:
   mysql-data:
   minio-data:
-  cassandra-data:

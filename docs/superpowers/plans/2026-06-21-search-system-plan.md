@@ -513,7 +513,7 @@ public class ViewCountSyncScheduler {
 - [ ] **Step 2: Verify note-service compiles**
 
 ```bash
-mvn compile -pl note-service
+mvn compile -pl :note-service
 ```
 
 - [ ] **Step 3: Commit**
@@ -1094,7 +1094,7 @@ public class KafkaConsumerConfig {
 - [ ] **Step 6: Compile search-sync-service**
 
 ```bash
-mvn compile -pl search-sync-service
+mvn compile -pl :search-sync-service
 ```
 
 - [ ] **Step 7: Commit**
@@ -1657,7 +1657,7 @@ public class SearchRpcServiceImpl implements SearchRpcService {
 - [ ] **Step 4: Compile search-service**
 
 ```bash
-mvn compile -pl search-service
+mvn compile -pl :search-service
 ```
 
 - [ ] **Step 5: Commit**

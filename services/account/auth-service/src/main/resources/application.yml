@@ -1,0 +1,63 @@
+server:
+  port: 8084
+
+spring:
+  application:
+    name: auth-service
+  config:
+    import:
+      - optional:nacos:shared-infra.yaml?group=COMMON
+      - optional:nacos:${spring.application.name}.yaml
+  cloud:
+    nacos:
+      discovery:
+        server-addr: ${NACOS_HOST:localhost}:18848
+        enabled: true
+      config:
+        server-addr: ${NACOS_HOST:localhost}:18848
+  kafka:
+    bootstrap-servers: ${KAFKA_HOST:localhost}:9092
+    producer:
+      acks: all
+      properties:
+        max.block.ms: 3000
+        delivery.timeout.ms: 10000
+        request.timeout.ms: 3000
+      key-serializer: org.apache.kafka.common.serialization.StringSerializer
+      value-serializer: org.springframework.kafka.support.serializer.JsonSerializer
+  datasource:
+    url: jdbc:mysql://${MYSQL_HOST:localhost}:${MYSQL_PORT:13306}/live_community?useSSL=false&allowPublicKeyRetrieval=true&serverTimezone=UTC
+    username: ${AUTH_DB_USER:auth_app}
+    password: ${AUTH_DB_PASSWORD:auth_dev}
+  data:
+    redis:
+      host: ${REDIS_HOST:localhost}
+      port: ${REDIS_PORT:16379}
+
+dubbo:
+  consumer:
+    timeout: 3000
+    retries: 0
+  application:
+    name: auth-service
+  registry:
+    address: nacos://${NACOS_HOST:localhost}:18848
+  protocol:
+    name: tri
+    port: 20884
+
+jwt:
+  secret: ${JWT_SECRET:super-secret-key-change-in-production}
+
+wechat:
+  app-id: ""
+  app-secret: ""
+
+taobao:
+  app-key: ""
+  app-secret: ""
+
+sms:
+  provider: mock
+  code-length: 6
+  code-ttl: 300
