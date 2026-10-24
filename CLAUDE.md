@@ -34,3 +34,15 @@ Leaf clients reserve batches of IDs and never invent fallback IDs. Snowflake is 
 ## Migration and deployment
 
 Read docs/微服务修复实施与部署.md before starting a changed deployment. Migration tools never run automatically against an existing database. Preserve unrelated uncommitted work. Never reset leaf allocation high-water marks, delete existing user data, or run old cleanup/init scripts against a deployed environment.
+
+## Agent skills
+
+### Issue tracker
+
+Issues 和规格发布到 wxb-gs/live_community 的 GitHub Issues。
+详见 docs/agents/issue-tracker.md。
+
+### Domain docs
+
+采用 single-context：根目录 GLOSSARY.md 与 docs/adr/。
+详见 docs/agents/domain.md。
